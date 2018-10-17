@@ -225,7 +225,7 @@ if __name__ == '__main__':
          36, 110,  46,  22, 101,
     ]
     #call genetic algorithm for answer
-    solution = ga_skeleton(2, 100, eval_square, False, False)
+    solution = ga_skeleton(2, 100000, eval_square, False, False)
     perfect_square = solution[0]
 
 
