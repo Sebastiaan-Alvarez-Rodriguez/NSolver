@@ -91,52 +91,74 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         plt.show(block=False)
 
     # ----------------------- Evolution loop ------------------------------
+#https://blackboard.leidenuniv.nl/bbcswebdav/pid-4458530-dt-content-rid-5832938_1/courses/4032NACO6-1819FWN/3b%20-%20Evolutionary_Algorithms.pdf
     print('Starting evolution loop for',eval_budget,'iterations')
     while evalcount < eval_budget:
         pop_new_geno = np.zeros((mu, geno_len))
         #generate normal fitness
-        total_fitness = sum(fitness)
-        normal_fitness = np.divide(fitness, total_fitness)
+        total_fitness = sum(1/fitness)
+        normal_fitness = np.divide(1/fitness, total_fitness)
         # generate the a new population using crossover and mutation
         for i in range(mu):
+#selection part 1
             print('generating individual',i)
-            # implement the selection operator.
             p1 = np.random.choice(range(mu), p=normal_fitness)
 
             if np.random.randn() < pc:
-                cp_normal_fitness = normal_fitness#copy normal fitness (so we can reassign without worry)
-                cp_normal_fitness[p1] = 0 # we cannot choose p2 equal to p1
-                p2 = np.random.choice(range(mu), p=cp_normal_fitness)
-
-                #single point crossover... TODO: how to store childrens' genomes?
-                crossover_point = np.random.randint(1, high=(geno_len-1))
-                for j in range(geno_len):
-                    if j <= crossover_point:
-                        pop_new_geno[i,j] = pop_geno[p1,j]
-                    else:
-                        pop_new_geno[i,j] = pop_geno[p2,j]
-
+#selection part 2 (optional)
+                p2 = np.random.choice(range(mu), p=normal_fitness)
+                while p1 == p2:
+                    p2 = np.random.choice(range(mu), p=normal_fitness)
+#crossover part (order 1 crossover chosen, because no repair needed by operation)
+                #choose left point from [0..<highest index -1>]
+                crossover_point_left = np.random.randint(0, high=geno_len-1)
+                #choose right point from [<left point+1>..<highest index>]
+                crossover_point_right = np.random.randint(crossover_point_left+1, high=geno_len)
+                #copy same part
+                for j in range(crossover_point_left,crossover_point_right+1):
+                    pop_new_geno[i, j] = pop_geno[p1,j]
+                tmp_index = 0
+                tmp_checkarray = np.zeros(2*(geno_len-(crossover_point_right-1-crossover_point_left)))
+                #copy parent2, last unused values
+                for j in range(crossover_point_right+1, geno_len):
+                    tmp_checkarray[tmp_index] = pop_geno[p2, j]
+                    ++tmp_index
+                #copy parent2, first unused values
+                for j in range(0, crossover_point_left):
+                    tmp_checkarray[tmp_index] = pop_geno[p2, j]
+                    ++tmp_index
+                #copy parent1, last unused values
+                for j in range(crossover_point_right+1, geno_len):
+                    tmp_checkarray[tmp_index] = pop_geno[p1, j]
+                    ++tmp_index
+                #copy parent1, first unused values
+                for j in range(0, crossover_point_left):
+                    tmp_checkarray[tmp_index] = pop_geno[p1, j]
+                    ++tmp_index
+                #copy all values in correct order in new geno, if unique afterwards
+                cur_index = crossover_point_right+1
+                while pop_new_geno[i,cur_index%geno_len] == 0:
+                    for j in range(0, 2*(geno_len-(crossover_point_right-crossover_point_left))):
+                        if not tmp_checkarray[j] in pop_new_geno[i, :]:
+                            pop_new_geno[i,cur_index%geno_len] = tmp_checkarray[j]
+                            ++cur_index
             else:
                 # No crossover, copy the parent chromosome
-                # Werkt copy van geno zetten op plek i wel zo?
-                pop_new_geno[i, :] = p1
-
-
-            # TODO
-            # implement the mutation operator
-            #pop_new_geno[i, :] = ...         # apply the mutation and then
-                                             # store it in pop_new_geno
-
-            # TODO
-            # repair the newly generated solution (if you want...)
-            # the solution might be invalid because of duplicated integers
-
+                pop_new_geno[i] = p1
+            if np.random.randn() < pm:
+#swap mutation (chosen because no repair needed by operation + I am lazy)
+                mutation_left = np.random.randint(0, high=geno_len-1)
+                mutation_right= np.random.randint(mutation_left+1, high=geno_len)
+                mutation_tmp_val = pop_new_geno[i, mutation_left]
+                pop_new_geno[i, mutation_left] = pop_new_geno[i, mutation_right]
+                pop_new_geno[i, mutation_right]= mutation_tmp_val
 
         # Replace old population by the newly generated population
         pop_geno = pop_new_geno
 
         for i in range(mu):
             fitness[i] = fitness_func(pop_geno[i, :])
+            print('fitness',i,'/',mu,'determined')
 
         # optimal solution in each iteration
         index = np.argmin(fitness)
