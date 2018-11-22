@@ -26,11 +26,6 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
 
     # ----------------- general setting of variables ----------------------
 
-    # TODO
-    # static variables
-    # problem size: 12 for square and 7 for cube
-
-
     if dim == 2:
         n = 12
     elif dim == 3:
@@ -38,24 +33,14 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
     else:
         raise ValueError('Invalid number of dimensions, use 2 or 3')
 
-    # the pheno type of the solution is the permutation of integers
-    # from 1 to n ^ dim
-    pheno_len = n**dim
-
-    # TODO
-    # At this point, you should think which geno type representation you
-    # would like to use and thus determine the length of the geno type
-    # solution vector. Example of geno encoding: bit-string converted from
-    # array of integers. This is up to you :)
-
     #Een array met ints, waarbij elke int een getal uit het antwoord representeert
     geno_len = n**dim 
 
     # TODO
     # endogenous parameters setting
     mu = n**dim          # population size
-    pc = 1               # crossover rate
-    pm = 1               # mutation rate
+    pc = 10              # crossover rate
+    pm = 10              # mutation rate
 
     # internal counter variable
     evalcount = 0     # count function evaluations
@@ -68,24 +53,18 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
 
     # ------------------- population initialization -----------------------
     # row vector representation is used throughout this code
-    # you need to keep pheno type population updated with the geno types
-    # for function evaluation
-
+    fitness = np.zeros((mu))
     # population
-    pop_pheno = np.zeros((mu, pheno_len))   # pheno type
-    pop_geno = np.zeros((mu, geno_len))     # geno type
-    fitness = np.zeros(mu)                  # fitness values
+    pop_geno = np.zeros((mu, geno_len))
 
-    # TODO (now initializes all members of pop to be 1,2,3,4,5,6,7,8,9....)
+    # TODO (now initializes all members of population a random value [1, 144])
     for i in range(mu):
-        pop_pheno[i, :] = [i for i in range(1, (n**dim)+1)]  # generate pheno type individual uniformly
-        pop_geno[i, :] = [i for i in range(1, (n**dim)+1)]   # convert them to geno type solution
-        fitness[i] = fitness_func(pop_pheno[i, :])   # and evaluate the solution...
+        pop_geno[i, :] = np.random.permutation(np.arange(1, geno_len+1))
+        fitness[i] = fitness_func(pop_geno[i, :])   # and evaluate the solution...
     print('All', mu, 'population members initialized')
     index = np.argmin(fitness)
     fopt = fitness[index]
     xopt = pop_geno[index, :]
-    xopt_pheno = pop_pheno[index, :]
 
     # increase the evalcount by mu
     hist_best_f[evalcount:evalcount+mu] = fopt
@@ -109,57 +88,25 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         ax2.set_xlabel('generation')
         ax2.set_ylim([0, np.max(hist_gen_f)])
 
-        ax3 = plt.subplot(133)
-        bar3, = ax2.bar(np.arange(pheno_len), xopt_pheno)
-        ax3.set_title('best chromosome')
-        ax3.set_ylabel('value')
-        ax3.set_xlabel('phenotype index')
-
         plt.show(block=False)
 
     # ----------------------- Evolution loop ------------------------------
     print('Starting evolution loop for',eval_budget,'iterations')
     while evalcount < eval_budget:
-        # generate the a new population using crossover and mutation
         pop_new_geno = np.zeros((mu, geno_len))
+        #generate normal fitness
+        total_fitness = sum(fitness)
+        normal_fitness = np.divide(fitness, total_fitness)
+        # generate the a new population using crossover and mutation
         for i in range(mu):
             print('generating individual',i)
-            # TODO
             # implement the selection operator.
-            #let's go: https://en.wikipedia.org/wiki/Selection_(genetic_algorithm)
-            normal_fit = np.zeros(mu)
-            total_fit = sum(fitness)
-            for j in range(mu):
-                normal_fit[j] = fitness[i] / total_fit
-            #sort descending
-            normal_fit = -np.sort(-normal_fit)
-            accumulated_normal_fit = np.zeros(mu)
-            for j in range(mu):
-                accumulated_normal_fit[j] = sum(normal_fit[:j])
-            randvalue = np.random.randn()
-            #get first element >= randvalue
-            first_individual_selected = 0;
-            for j in range(mu):
-                if accumulated_normal_fit[j] >= randvalue:
-                    first_individual_selected = j
-                    break
-            
-            p1 = first_individual_selected # select the first parent from pop_geno
+            p1 = np.random.choice(range(mu), p=normal_fitness)
+
             if np.random.randn() < pc:
-                randvalue = np.random.randn() #new random number
-                #get first element >= randvalue
-                second_individual_selected = 0;
-                for j in range(mu):
-                    if accumulated_normal_fit[j] >= randvalue:
-                        if j != first_individual_selected:
-                            second_individual_selected = j
-                        else:
-                            if (j - 1 >= 0):
-                                second_individual_selected = j - 1
-                            else:
-                                second_individual_selected = j + 1
-                        break
-                p2 = second_individual_selected # select the second parent from pop_geno
+                cp_normal_fitness = normal_fitness#copy normal fitness (so we can reassign without worry)
+                cp_normal_fitness[p1] = 0 # we cannot choose p2 equal to p1
+                p2 = np.random.choice(range(mu), p=cp_normal_fitness)
 
                 #single point crossover... TODO: how to store childrens' genomes?
                 crossover_point = np.random.randint(1, high=(geno_len-1))
@@ -171,6 +118,7 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
 
             else:
                 # No crossover, copy the parent chromosome
+                # Werkt copy van geno zetten op plek i wel zo?
                 pop_new_geno[i, :] = p1
 
 
@@ -182,15 +130,13 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
             # TODO
             # repair the newly generated solution (if you want...)
             # the solution might be invalid because of duplicated integers
-            #...
+
 
         # Replace old population by the newly generated population
         pop_geno = pop_new_geno
 
-        # TODO
         for i in range(mu):
-            pop_pheno[i, :] = pop_geno[i, :]   # decode the geno type solution to pheno type for evaluation
-            fitness[i] = fitness_func(pop_pheno[i, :])
+            fitness[i] = fitness_func(pop_geno[i, :])
 
         # optimal solution in each iteration
         index = np.argmin(fitness)
