@@ -139,7 +139,7 @@ def compare_optimizers(optimizers, problems, *, num_runs=1, results_dir=None, sh
 
                 start_time = time()
                 xopt, fopt, hist_best_f = func(problem.dim, eval_budget, problem.fitness_func,
-                                               return_stats=True, do_plot=False)
+                                               return_stats=True, do_plot=True)#TODO: refpoint for plotting
 
                 xopt_tracking[optimizer_idx, run_idx, :] = xopt
                 elapsed_tracking[optimizer_idx, run_idx] = time() - start_time
@@ -358,7 +358,7 @@ def run(num_runs=3, name_filter=None):
         Problem('Perfect Magic Cube',      magic_square.eval_cube,      dim=3, budget=eval_budget),
     ]
 
-    show_plots = False
+    show_plots = True
     results_dir = 'Results/'
     guarantee_folder_exists(results_dir)
 

@@ -1,29 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import namedtuple
+from importlib import import_module
+from mpl_toolkits import mplot3d
 
 def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=False):
-    """
-    skeleton for the genetic algorithm. For implementation, we
-    recommend to use a vector of integers between [1, n^2] (for magic
-    square) as the representation (adapt such a representation to the
-    magic cube problem by yourself). In addition, you have to come up
-    with the mutation operator by yourself :)
-
-    :param dim:          problem dimension, which should be either 2 (square) or 3 (cube)
-    :param eval_budget:  int, the function evaluation budget
-    :param fitness_func: function handle, you should use one of the
-                         evaluation function provided
-    :param do_plot:      should interactive plots be drawn during the optimization
-    :param return_stats: should the convergence history be returned too
-
-    :return:
-        xopt : array, the final solution vector found by the algorithm
-        fopt : double, the corresponding fitness value of xopt
-
-    Author: Koen van der Blom, Hao Wang, Sander van Rijn
-    Last modified: 2018-09-28
-    """
-
     # ----------------- general setting of variables ----------------------
 
     if dim == 2:
@@ -33,14 +14,14 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
     else:
         raise ValueError('Invalid number of dimensions, use 2 or 3')
 
-    #Een array met ints, waarbij elke int een getal uit het antwoord representeert
+    #Representation: Array of integers with values [1, n^dim]
     geno_len = n**dim 
 
 
     # endogenous parameters setting
-    mu = n*dim          # population size
-    pc = 0.9             # crossover rate
-    pm = 0.3             # mutation rate
+    mu = n*dim        # population size
+    pc = 0.9          # crossover rate
+    pm = 0.3          # mutation rate
 
     # internal counter variable
     evalcount = 0     # count function evaluations
@@ -57,54 +38,52 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
     # population
     pop_geno = np.zeros((mu, geno_len))
 
-    # TODO (now initializes all members of population a random value [1, 144])
+    # Initialize all members of population a random value [1, n^dim]) and evaluates
     for i in range(mu):
         pop_geno[i, :] = np.random.permutation(np.arange(1, geno_len+1))
-        fitness[i] = fitness_func(pop_geno[i, :])   # and evaluate the solution...
-    print('All', mu, 'population members initialized')
+        fitness[i] = fitness_func(pop_geno[i, :])
     index = np.argmin(fitness)
     fopt = fitness[index]
     xopt = pop_geno[index, :]
 
-    # increase the evalcount by mu
     hist_best_f[evalcount:evalcount+mu] = fopt
     evalcount += mu
 
+    # ----------------------- config drawing ------------------------------
     if do_plot:
         plt.ion()
-        # # fig = plt.figure()
+    if dim == 3:
+        semi_perfect = False #TODO: get whether this is semi perfect or not
+        X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
+        semi = 'semi-perfect ' if semi_perfect else ''
 
-        # ax1 = plt.subplot(131)
-        # line1, = ax1.plot(hist_best_f[:evalcount])
-        # ax1.set_title('minimal global error')
-        # ax1.set_ylabel('error')
-        # ax1.set_xlabel('evaluations')
-        # ax1.set_ylim([0, np.max(hist_best_f)])
+        fig = plt.figure(figsize=(9,7))
+        ax = fig.gca(projection='3d')
 
-        # ax2 = plt.subplot(132)
-        # line2, = ax1.plot(hist_gen_f[:gencount])
-        # ax2.set_title('minimal error in the current generation')
-        # ax2.set_ylabel('error')
-        # ax2.set_xlabel('generation')
-        # ax2.set_ylim([0, np.max(hist_gen_f)])
+        plt.title("Best {semi}cube found using ga".format(semi=semi, y=.91))
+        ax.xaxis.set_ticks([])
+        ax.yaxis.set_ticks([])
+        ax.zaxis.set_ticks([])
+        ax.set_ylim(bottom=0, top=n)
+        ax.set_xlim(left=0, right=n)
+        ax.set_zlim(bottom=0, top=n)
+        ax.view_init(elev=10, azim=-85)
+        plt.tight_layout(pad=5, h_pad=0, w_pad=0, rect=[-.25,-.25,1.25,1.25])
+    elif dim == 2:
+        for x in np.arange(n):
+            plt.axhline(x+1, color='black', linewidth=1)
+            plt.axvline(x+1, color='black', linewidth=1)
 
-        # plt.show(block=False)
+        plt.title("Best square found using ga")
+        plt.figure(figsize=(9,7))
+        plt.xticks([])
+        plt.yticks([])
+        plt.ylim(top=n, bottom=0)
+        plt.xlim(left=0, right=n)
+        plt.tight_layout()
 
-
-        plt.plot([10000, 6000, 1000, 22, 10, 1])
-        plt.xlabel('eval #')
-        plt.ylabel('local minimum')
-        plt.show(False)
-        # plt.plot(hist_gen_f[:gencount])
-        # plt.ylabel('local minimum')
-        # plt.show()
-
-                    # line1.set_data(np.arange(evalcount), hist_best_f[:evalcount])
-                    # ax1.set_xlim([0, evalcount])
-                    # ax1.set_ylim([0, np.max(hist_best_f)])
     # ----------------------- Evolution loop ------------------------------
 #https://blackboard.leidenuniv.nl/bbcswebdav/pid-4458530-dt-content-rid-5832938_1/courses/4032NACO6-1819FWN/3b%20-%20Evolutionary_Algorithms.pdf
-    print('Starting evolution loop for',eval_budget,'iterations')
     while evalcount < eval_budget:
         pop_new_geno = np.zeros((mu, geno_len))
         #generate normal fitness
@@ -175,7 +154,6 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         if fopt_curr_gen < fopt:
             fopt = fopt_curr_gen
             xopt = x_opt_curr_gen
-            print(evalcount, fopt_curr_gen)
 
         # record historical information
         hist_best_f[evalcount:evalcount+mu] = fopt
@@ -187,12 +165,41 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
 
         # Plot statistics
         if do_plot:
-            line1.set_data(np.arange(evalcount), hist_best_f[:evalcount])
-            ax1.set_xlim([0, evalcount])
-            ax1.set_ylim([0, np.max(hist_best_f)])
+            if dim == 3:
+                plot_cube(x_opt_curr_gen, plot=plt, ax=ax, n=n)
+            elif dim == 2:
+                square = x_opt_curr_gen.reshape((n, n))
+                X, Y = np.meshgrid(np.arange(n), np.arange(n))
+                for x, y in zip(X.flatten(), Y.flatten()):
+                    plt.text(x+.5, n-y-.5, s=str(int(square[y,x])), color=plt.cm.winter(square[y,x]/n**2), horizontalalignment='center', verticalalignment='center')
+                plt.pause(1)
+                print("Ik ga weer")
 
-            plt.draw()
+        else:
+            print("no plotting for me")
     if return_stats:
         return xopt, fopt, hist_best_f
     else:
         return xopt, fopt
+
+
+# cube, optimizer, results_dir=None, show_plot=False, *, semi_perfect=False
+def plot_cube(cube, plot, ax, n):
+    """ Plot the best (perfect/semi-perfect) magic cube found """
+    cube = cube.reshape((n, n, n))
+    X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
+
+    for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
+        ax.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plot.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
+    plot.pause(1)
+    print("Ik ga weer")
+
+def plot_square(square, plot, n):
+    """ Plot the best magic square found per optimizer """
+    square = square.reshape((n, n))
+    X, Y = np.meshgrid(np.arange(n), np.arange(n))
+
+    for x, y in zip(X.flatten(), Y.flatten()):
+        plot.text(x+.5, n-y-.5, s=str(int(square[y,x])), color=plot.cm.winter(square[y,x]/n**2), horizontalalignment='center', verticalalignment='center')
+    plot.show(False)
+    print("Ik ga weer")
