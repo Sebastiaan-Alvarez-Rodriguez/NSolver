@@ -351,7 +351,7 @@ def run(num_runs=3, name_filter=None):
     else:
         print('{num} optimizers detected\n'.format(num=len(optimizers)))
 
-    eval_budget = 10000
+    eval_budget = 10000#TODO refpoint for plotting
     problems = [
         Problem('Magic Square',            magic_square.eval_square,    dim=2, budget=eval_budget),
         Problem('Semi-Perfect Magic Cube', magic_square.eval_semi_cube, dim=3, budget=eval_budget),

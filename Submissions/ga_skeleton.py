@@ -60,7 +60,7 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         fig = plt.figure(figsize=(9,7))
         ax = fig.gca(projection='3d')
 
-        plt.title("Best {semi}cube found using ga".format(semi=semi, y=.91))
+        plt.title("Best cube found using ga")
         ax.xaxis.set_ticks([])
         ax.yaxis.set_ticks([])
         ax.zaxis.set_ticks([])
@@ -69,18 +69,29 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         ax.set_zlim(bottom=0, top=n)
         ax.view_init(elev=10, azim=-85)
         plt.tight_layout(pad=5, h_pad=0, w_pad=0, rect=[-.25,-.25,1.25,1.25])
+        cube = xopt.reshape((n, n, n))
+        X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
+        text = [... for i in range(n**dim)]
+        for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
+            text[z*n*n+y*n+x] = ax.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plt.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
     elif dim == 2:
-        for x in np.arange(n):
-            plt.axhline(x+1, color='black', linewidth=1)
-            plt.axvline(x+1, color='black', linewidth=1)
-
+        fig = plt.figure(figsize=(9,7))
+        fig.show()
+        fig.canvas.draw()
         plt.title("Best square found using ga")
-        plt.figure(figsize=(9,7))
         plt.xticks([])
         plt.yticks([])
         plt.ylim(top=n, bottom=0)
         plt.xlim(left=0, right=n)
         plt.tight_layout()
+        for x in np.arange(n):
+            plt.axhline(x+1, color='black', linewidth=1)
+            plt.axvline(x+1, color='black', linewidth=1)
+        square = xopt.reshape((n, n))
+        X, Y = np.meshgrid(np.arange(n), np.arange(n))
+        text = ['' for i in range(n**dim)]
+        for x, y in zip(X.flatten(), Y.flatten()):
+            text[y*n+x] = plt.text(x+.5, n-y-.5, s=str(int(square[y,x])), color=plt.cm.winter(square[y,x]/n**2), horizontalalignment='center', verticalalignment='center')
 
     # ----------------------- Evolution loop ------------------------------
 #https://blackboard.leidenuniv.nl/bbcswebdav/pid-4458530-dt-content-rid-5832938_1/courses/4032NACO6-1819FWN/3b%20-%20Evolutionary_Algorithms.pdf
@@ -131,9 +142,9 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
                             pop_new_geno[i,cur_index%geno_len] = tmp_checkarray[j]
                             cur_index += 1
             else:
-                # No crossover, copy the parent chromosome
+                # No crossover, copy parent chromosome
                 pop_new_geno[i] = pop_geno[p1]
-            if np.random.randn() < (pm ** normal_fitness[p1]):
+            if np.random.randn() < (pm):
 #swap mutation (chosen because no repair needed by operation + I am lazy)
                 mutation_left = np.random.randint(0, high=geno_len-1)
                 mutation_right= np.random.randint(mutation_left+1, high=geno_len)
@@ -166,40 +177,26 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         # Plot statistics
         if do_plot:
             if dim == 3:
-                plot_cube(x_opt_curr_gen, plot=plt, ax=ax, n=n)
+                plt.title(f"Best cube found using ga ({evalcount}/{eval_budget}), fitness={fopt}")
+                cube = x_opt_curr_gen.reshape((n, n, n))
+                X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
+                for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
+                    text[z*n*n+y*n+x].remove()
+                    text[z*n*n+y*n+x] = ax.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plt.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
+                fig.canvas.draw()
+
             elif dim == 2:
+                plt.title(f'Best square found using ga ({evalcount}/{eval_budget}), fitness={round(fopt, 2)}')
                 square = x_opt_curr_gen.reshape((n, n))
                 X, Y = np.meshgrid(np.arange(n), np.arange(n))
-                for x, y in zip(X.flatten(), Y.flatten()):
-                    plt.text(x+.5, n-y-.5, s=str(int(square[y,x])), color=plt.cm.winter(square[y,x]/n**2), horizontalalignment='center', verticalalignment='center')
-                plt.pause(1)
-                print("Ik ga weer")
 
-        else:
-            print("no plotting for me")
+                for x, y in zip(X.flatten(), Y.flatten()):
+                    text[y*n+x].remove()
+                    text[y*n+x] = plt.text(x+.5, n-y-.5, s=str(int(square[y,x])), color=plt.cm.winter(square[y,x]/n**2), horizontalalignment='center', verticalalignment='center')
+                fig.canvas.draw()
+    plt.clf()
+    plt.close()
     if return_stats:
         return xopt, fopt, hist_best_f
     else:
         return xopt, fopt
-
-
-# cube, optimizer, results_dir=None, show_plot=False, *, semi_perfect=False
-def plot_cube(cube, plot, ax, n):
-    """ Plot the best (perfect/semi-perfect) magic cube found """
-    cube = cube.reshape((n, n, n))
-    X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
-
-    for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
-        ax.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plot.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
-    plot.pause(1)
-    print("Ik ga weer")
-
-def plot_square(square, plot, n):
-    """ Plot the best magic square found per optimizer """
-    square = square.reshape((n, n))
-    X, Y = np.meshgrid(np.arange(n), np.arange(n))
-
-    for x, y in zip(X.flatten(), Y.flatten()):
-        plot.text(x+.5, n-y-.5, s=str(int(square[y,x])), color=plot.cm.winter(square[y,x]/n**2), horizontalalignment='center', verticalalignment='center')
-    plot.show(False)
-    print("Ik ga weer")
