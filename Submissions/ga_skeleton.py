@@ -51,33 +51,54 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
 
     # ----------------------- config drawing ------------------------------
     if do_plot:
-        plt.ion()
+        # plt.ion()
+        ax1 = plt.subplot(131)
+        line1 = ax1.plot(hist_best_f[:evalcount])[0]
+        ax1.set_title('min. global error')
+        ax1.set_ylabel('error')
+        ax1.set_xlabel('evaluations')
+        ax1.set_ylim([0, np.max(hist_best_f)])
+
+        ax2 = plt.subplot(132)
+        line2 = ax2.plot(hist_gen_f[:gencount])[0]
+        ax2.set_title('min. error in cur gen')
+        ax2.set_ylabel('error')
+        ax2.set_xlabel('generation')
+        ax2.set_ylim([0, np.argmax(fitness)])
+
+        ax3 = plt.subplot(133)
+        bars3 = ax3.bar(np.arange(geno_len), xopt)
+        ax3.set_title('best chromosome')
+        ax3.set_ylabel('value')
+        ax3.set_xlabel('genotype index')
+
+        plt.show(block=False)
+
     if dim == 3:
-        semi_perfect = False #TODO: get whether this is semi perfect or not
         X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
-        semi = 'semi-perfect ' if semi_perfect else ''
 
         fig = plt.figure(figsize=(9,7))
-        ax = fig.gca(projection='3d')
+        ax0 = fig.gca(projection='3d')
 
-        plt.title("Best cube found using ga")
-        ax.xaxis.set_ticks([])
-        ax.yaxis.set_ticks([])
-        ax.zaxis.set_ticks([])
-        ax.set_ylim(bottom=0, top=n)
-        ax.set_xlim(left=0, right=n)
-        ax.set_zlim(bottom=0, top=n)
-        ax.view_init(elev=10, azim=-85)
-        plt.tight_layout(pad=5, h_pad=0, w_pad=0, rect=[-.25,-.25,1.25,1.25])
+        fig.suptitle("Best cube found using ga")
+        ax0.xaxis.set_ticks([])
+        ax0.yaxis.set_ticks([])
+        ax0.zaxis.set_ticks([])
+        ax0.set_ylim(bottom=0, top=n)
+        ax0.set_xlim(left=0, right=n)
+        ax0.set_zlim(bottom=0, top=n)
+        ax0.view_init(elev=10, azim=-85)
+        fig.tight_layout(pad=5, h_pad=0, w_pad=0, rect=[-.25,-.25,1.25,1.25])
         cube = xopt.reshape((n, n, n))
         X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
         text = [... for i in range(n**dim)]
         for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
-            text[z*n*n+y*n+x] = ax.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plt.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
+            text[z*n*n+y*n+x] = ax0.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plt.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
     elif dim == 2:
         fig = plt.figure(figsize=(9,7))
         fig.show()
         fig.canvas.draw()
+
         plt.title("Best square found using ga")
         plt.xticks([])
         plt.yticks([])
@@ -161,7 +182,7 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         x_opt_curr_gen = pop_geno[index, :]
         fopt_curr_gen = fitness[index]
 
-        # keep track of the best solution ever found
+        # keep track of the best solution found
         if fopt_curr_gen < fopt:
             fopt = fopt_curr_gen
             xopt = x_opt_curr_gen
@@ -177,13 +198,12 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         # Plot statistics
         if do_plot:
             if dim == 3:
-                plt.title(f"Best cube found using ga ({evalcount}/{eval_budget}), fitness={fopt}")
+                fig.suptitle(f"Best cube found using ga ({evalcount}/{eval_budget}), fitness={fopt}")
                 cube = x_opt_curr_gen.reshape((n, n, n))
                 X, Y, Z = np.meshgrid(np.arange(n), np.arange(n), np.arange(n))
                 for x, y, z in zip(X.flatten(), Y.flatten(), Z.flatten()):
                     text[z*n*n+y*n+x].remove()
-                    text[z*n*n+y*n+x] = ax.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plt.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
-                fig.canvas.draw()
+                    text[z*n*n+y*n+x] = ax0.text(x+.5, y+.5, z+.5, s=str(int(cube[y,x,z])), color=plt.cm.winter(y/n), fontsize=7, horizontalalignment='center', verticalalignment='center')
 
             elif dim == 2:
                 plt.title(f'Best square found using ga ({evalcount}/{eval_budget}), fitness={round(fopt, 2)}')
@@ -193,9 +213,26 @@ def ga_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
                 for x, y in zip(X.flatten(), Y.flatten()):
                     text[y*n+x].remove()
                     text[y*n+x] = plt.text(x+.5, n-y-.5, s=str(int(square[y,x])), color=plt.cm.winter(square[y,x]/n**2), horizontalalignment='center', verticalalignment='center')
+            if plt.fignum_exists(fig.number):
                 fig.canvas.draw()
+            else:
+                exit()
+
+            line1.set_data(np.arange(evalcount), hist_best_f[:evalcount])
+            ax1.set_xlim([0, evalcount])
+            ax1.set_ylim([0, np.max(hist_best_f)])
+
+            line2.set_data(np.arange(gencount), hist_gen_f[:gencount])
+            ax2.set_xlim([0, gencount])
+            ax2.set_ylim([0, np.max(hist_gen_f)])
+
+            for bar, h in zip(bars3, xopt):
+                bar.set_height(h)
+
+            plt.pause(0.00001)
+            plt.draw()
     plt.clf()
-    plt.close()
+    plt.close('all')
     if return_stats:
         return xopt, fopt, hist_best_f
     else:
