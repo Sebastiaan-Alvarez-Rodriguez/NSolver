@@ -42,7 +42,6 @@ def sa_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
     Last modified: 2018-09-28
     """
 
-    # TODO
     # Initialize static parameters
     pm = 2         # mutation rate
     alpha = 0.7      # temperature decaying parameter
@@ -57,7 +56,6 @@ def sa_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
     else:
         raise ValueError('Invalid number of dimensions, use 2 or 3')
 
-    # TODO
     # Set initial temperature
     T = 25000
 
@@ -70,7 +68,6 @@ def sa_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
     hist_iter_f = np.array([np.nan] * num_iterations)
     hist_temperature = np.array([np.nan] * num_iterations)
 
-    # TODO
     # Generate initial solution and evaluate
     x = random_solution(n, dim)
     f = fitness_func(x)         # evaluate the solution using fitness_func
@@ -116,9 +113,7 @@ def sa_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
         k = min(k, eval_budget-evalcount)
         for j in range(k):
 
-            # TODO
             s_new = mutate_solution(x, n, dim, pm, f, fopt)   # Generate a new solution by the permutation of s
-            # print(s_new)
             f_new = fitness_func(s_new)   # evaluate the new solution
             
             if f_new < f:
@@ -132,15 +127,13 @@ def sa_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
             if f > 2 * fopt:
                 x = copy(xopt)
                 f = fopt
-                #print("Return")
             
             # update the best solution found so far
             if f < fopt:
                 fopt = f
                 xopt = copy(x)
             
-            hist_best_f[evalcount] = fopt   # tracking the best fitness
-                                            # ever found
+            hist_best_f[evalcount] = fopt   # tracking the best fitness ever found
             
             # Generation best statistics
             hist_iter_f[itercount] = f
@@ -159,16 +152,10 @@ def sa_skeleton(dim, eval_budget, fitness_func, do_plot=False, return_stats=Fals
 
                 plt.pause(0.00001)
                 plt.draw()
-            
             evalcount += 1   # Increase evaluation counter
-
-
-        # TODO
-        # Temperature update
         T = alpha * T
         
         print(evalcount, ": current fitness: ", fopt)
-
         itercount += 1   # Increase iteration counter
 
     if return_stats:

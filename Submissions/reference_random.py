@@ -1,13 +1,5 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 import numpy as np
-
-"""
-Filename.py: << A short summary docstring about this file >>
-"""
-
-__author__ = 'Sander van Rijn'
-__email__ = 's.j.van.rijn@liacs.leidenuniv.nl'
 
 
 def reference_random(dim, eval_budget, fitness_func, do_plot=False, return_stats=False):
