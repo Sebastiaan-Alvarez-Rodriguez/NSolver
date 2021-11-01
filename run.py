@@ -41,6 +41,12 @@ def add_args(parser):
     parser.add_argument('--paths', metavar='paths', nargs='+', help='Paths to search for solver implementations. Pointed locations can be files or directories. Separate locations using spaces.')
     parser.add_argument('--verbose', type=bool, help='Print more verbose output for debugging', action='store_true')
 
+    subparsers = parser.add_subparsers(help='Subcommands', dest='command')
+
+    subparsers.add_parser('run', help='Execute solver')
+    subparsers.add_parser('compare', help='Execute comperator for multiple solvers')
+    parser.add_
+
 
 def main():
     parser = argparse.ArgumentParser(
