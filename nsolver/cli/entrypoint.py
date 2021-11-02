@@ -10,9 +10,11 @@ def _get_modules():
     return [deploy, clean, plugin]
 
 
+
 def generic_args(parser):
     '''Configure arguments important for all modules (install, uninstall, start, stop) here.'''
-    parser.add_argument('--key-path', dest='key_path', type=str, default=None, help='Path to ssh key to access nodes.')
+    parser.add_argument('--verbose', type=bool, help='Print more verbose output for debugging', action='store_true')
+
 
 
 def subparser(parser):
@@ -23,17 +25,15 @@ def subparser(parser):
 
 
 
-def add_args(parser):
-    parser.add_argument('--evaluations', metavar='amount', type=int, default=10000, help='Amount of evaluations per parser (default=10,000). A higher number takes longer.')
-    parser.add_argument('--filters', metavar='filter', type=str, default=None, help='If set, only executes solvers with names matching given regex. To supply multiple regexes, split regexes with ":".')
-    parser.add_argument('--paths', metavar='paths', nargs='+', help='Paths to search for solver implementations. Pointed locations can be files or directories. Separate locations using spaces.')
-    parser.add_argument('--verbose', type=bool, help='Print more verbose output for debugging', action='store_true')
-
+def cli(parser):
+    '''Adds commandline interface (cli) parsers and arguments as needed for each cli module.
+    Args:
+        parser (argparse.Parser): Base parser to extend.'''
     subparsers = parser.add_subparsers(help='Subcommands', dest='command')
 
-    subparsers.add_parser('run', help='Execute solver')
-    subparsers.add_parser('compare', help='Execute comperator for multiple solvers')
-    parser.add_
+    for module in _get_modules():
+        sub = subparsers.add_parser(module.__name__, module.__help__)
+        module.cli(sub)
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='Compare optimizers on N-cubes.'
     )
-    add_args(parser)
+    cli(parser)
     retval = True
 
     args = parser.parse_args()
