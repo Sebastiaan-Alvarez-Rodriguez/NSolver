@@ -10,8 +10,8 @@ def get_solver():
 class SimulatedAnnealing(Solver):
     '''Simulated annealing algorithm to solve magic N-cubes.'''
     def __init__(self):
-        self.T = 25000         # Annealing temperature
-        self.alpha = 0.7       # temperature decaying parameter
+        self.T = 250000         # Annealing temperature
+        self.alpha = 0.9       # temperature decaying parameter
         self.pm = 2            # mutation rate
         self.iter_length = 100 # number of evaluations per iteration
 
@@ -99,8 +99,11 @@ class SimulatedAnnealing(Solver):
         solution = copy(solution_optimal)
         fitness = fitness_optimal
 
+        if fitness_optimal == 0.0:
+            print('NOOOOOOOOO')
+            return
 
-        while evalcount < evaluations:
+        while evalcount < evaluations and fitness_optimal > 0.0:
             hist_temperature[itercount] = self.T
 
             self.iter_length = min(self.iter_length, evaluations-evalcount)
@@ -147,7 +150,7 @@ class SimulatedAnnealing(Solver):
                 evalcount += 1   # Increase evaluation counter
             self.T = self.alpha * self.T
 
-            print(f'{evalcount}: current fitness: {fitness_optimal}')
+            print(f'{evalcount} (T={self.T:.02f}): current fitness: {fitness_optimal}')
             itercount += 1   # Increase iteration counter
 
         # if return_stats:

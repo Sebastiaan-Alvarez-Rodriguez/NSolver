@@ -41,6 +41,11 @@ def evaluate_cube(cube):
     return mse
 
 
+
+def is_solution(cube, dim=3):
+    return evaluate(cube, dim=dim) == 0.0 
+
+
 def raise_representation_error(num_numbers, required_numbers, representation):
     missing = required_numbers - set(representation)
     not_belong = set(representation) - required_numbers
