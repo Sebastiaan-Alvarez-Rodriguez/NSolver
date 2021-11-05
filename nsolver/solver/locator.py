@@ -1,6 +1,6 @@
 import nsolver.utils.fs as fs
 import nsolver.utils.importer as importer
-import nsolver.Solver as Solver
+from .solver import Solver
 import concurrent.futures
 from pathlib import Path
 
@@ -22,33 +22,25 @@ def _find_potential_solvers(path):
 
 
 
-def _is_solver(module):
-    '''Checks whether given Python module contains a valid solver.
-    A module is an solver if and only if there is a function get_solver(), which returns a valid `nsolver.solver`.
-    Args:
-        module (python module): Module to test.
-    Returns:
-        bool: `True` if given path is an solver, `False` otherwise'''
-    try:
-        solver_class = module.get_solver()
-        return issubclass(solver_class, Solver)
-    except AttributeError as e:
-        return False
-
-
-
 def _import_and_validate(path):
     '''Tries to import a python module at given path, and validates whether this module contains an solver.
     Args:
         path (str or Path): Path to test.
     Returns:
-        (bool, solver): `True`, solver on success, `False`, `None` on failure.'''
+        solver: The imported solver.
+    Throws:
+        ValueError when path does not point to a .py file.
+        ImportError when found solver class is not a subclass of the base Solver.'''
     if not str(path).endswith('.py'):
         raise ValueError(f'Given path does not point to a .py file: {path}')
+    if not fs.isfile(path):
+        raise ValueError(f'Could not load solver at "{path}". Please verify your path and try again.')
+
     imported = importer.import_full_path(path)
-    if _is_solver(imported):
-        return True, imported.get_solver()
-    return False, None
+    solver_class = imported.get_solver()
+    if not issubclass(solver_class, Solver):
+        raise ImportError('Imported solver class is not a subclass of the base Solver')
+    return solver_class
 
 
 def is_solver(path):
@@ -56,7 +48,22 @@ def is_solver(path):
     Args:
         path (str or Path): Path to test.
     Returns:
-        (bool, solver): `True`, solver on success, `False`, `None` on failure.'''
+        (bool, Solver): `True`, solver on success, `False`, `None` on failure.'''
+    try:
+        return True, _import_and_validate(path)
+    except Exception as e:
+        return False, None
+
+
+def get_solver(path):
+    '''Fetches a solver.
+    Args:
+        path (str or Path): Path to fetch solver from.
+    Returns:
+        Solver: imported solver class.
+    Throws:
+        ValueError when path does not point to a .py file.
+        ImportError when found solver class is not a subclass of the base Solver.'''
     return _import_and_validate(path)
 
 

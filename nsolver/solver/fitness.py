@@ -4,9 +4,9 @@ import numpy as np
 
 def evaluate(cube, dim=3):
     if dim == 2:
-        return eval_square(cube)
+        return evaluate_square(cube)
     elif dim == 3:
-        return eval_cube
+        return evaluate_cube(cube)
     else:
         raise NotImplementedError(f'No eval function found for dim={dim}')
 
@@ -41,6 +41,43 @@ def evaluate_cube(cube):
     return mse
 
 
+def raise_representation_error(num_numbers, required_numbers, representation):
+    missing = required_numbers - set(representation)
+    not_belong = set(representation) - required_numbers
+    not_belong = None if not any(not_belong) else not_belong
+    raise ValueError(f'''Invalid representation! The solution should be a permutation of 1,...,{n}
+Missing numbers: {missing}
+Numbers that do not belong: {not_belong}''')
+
+
+def _verify_square(square):
+    n = len(square) ** (1 / 2)
+    if np.round(n) ** 2 != len(square):
+        raise ValueError('Invalid length! The solution length should be a square number')
+    n = int(np.round(n))
+
+    required_numbers = set(range(1, n**2+1))
+    if len(set(square) ^ required_numbers) != 0:
+        raise_representation_error(n**2, required_numbers, square)
+
+    magic_constant = n * (n ** 2 + 1) / 2
+    square = np.array(square).reshape((n, n))
+    return square, magic_constant
+
+
+def _verify_cube(cube):
+    n = len(cube) ** (1 / 3)
+    if np.round(n) ** 3 != len(cube):
+        raise ValueError("Invalid length! The solution length should be a cubic number")
+    n = int(np.round(n))
+
+    required_numbers = set(range(1, n**3+1))
+    if len(set(cube) ^ required_numbers) != 0:
+        raise_representation_error(n**3, required_numbers, cube)
+
+    magic_constant = n * (n**3 + 1) / 2
+    cube = np.array(cube).reshape((n, n, n))
+    return cube, magic_constant
 
 
 

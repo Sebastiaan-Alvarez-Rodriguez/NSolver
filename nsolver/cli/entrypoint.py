@@ -16,7 +16,9 @@ def _get_modules():
 
 def generic_args(parser):
     '''Configure arguments important for all modules (install, uninstall, start, stop) here.'''
-    parser.add_argument('--verbose', type=bool, help='Print more verbose output for debugging', action='store_true')
+    parser.add_argument('--verbose', help='Print more verbose output for debugging', action='store_true')
+    parser.add_argument('--size', type=int, help='Magic cube size (default=3)', default=3)
+    parser.add_argument('--dimension', type=int, help='Magic cube size dimension (default=2)', default=2)
 
 
 def build_cli(parser):
@@ -49,6 +51,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='Compare optimizers on N-cubes.'
     )
+    generic_args(parser)
     subparsers = build_cli(parser)
     retval = True
 

@@ -1,4 +1,4 @@
-from nsolver.optimizer import is_optimizer
+from nsolver.solver import get_solver
 from nsolver.utils.printer import *
 
 __name__ = 'run'
@@ -14,10 +14,14 @@ def build_cli(parser):
 
 def run(parser, args):
     print('Loading optimizer...')
-    success, opimizer = is_optimizer(args.path)
-    if not success:
-        printe(f'Could not load optimizer at "{args.path}')
+    try:
+        solver_class = get_solver(args.path)
+    except Exception as e:
+        printe(str(e))
         return False
 
-    print(f'Executing parser for {args.evaluations} evaluations.')
+    print(f'Executing solver for {args.evaluations} evaluations.')
+
+    instance = solver_class()
+    instance.execute(args.size, args.dimension, args.evaluations)
     return True

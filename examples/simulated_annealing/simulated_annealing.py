@@ -4,14 +4,16 @@ from copy import copy
 import numpy as np
 
 
+def get_solver():
+    return SimulatedAnnealing
+
 class SimulatedAnnealing(Solver):
     '''Simulated annealing algorithm to solve magic N-cubes.'''
     def __init__(self):
-        self.pm = 2            # mutation rate
+        self.T = 25000         # Annealing temperature
         self.alpha = 0.7       # temperature decaying parameter
+        self.pm = 2            # mutation rate
         self.iter_length = 100 # number of evaluations per iteration
-
-        self.T = 25000
 
 
     @staticmethod
@@ -54,102 +56,102 @@ class SimulatedAnnealing(Solver):
         return s_cpy
 
 
-        def execute(self, n, dim, evaluations):
-            # if do_plot:
-            #     plt.ion()
-            #     fig = plt.figure()
+    def execute(self, n, dim, evaluations):
+        # if do_plot:
+        #     plt.ion()
+        #     fig = plt.figure()
 
-            #     ax1 = plt.subplot(131)
-            #     line1 = ax1.plot(hist_best_f[:evalcount])[0]
-            #     ax1.set_title('minimal global error')
-            #     ax1.set_ylabel('error')
-            #     ax1.set_xlabel('evaluations')
-            #     ax1.set_ylim([0, np.max(hist_best_f[:evalcount])])
+        #     ax1 = plt.subplot(131)
+        #     line1 = ax1.plot(hist_best_f[:evalcount])[0]
+        #     ax1.set_title('minimal global error')
+        #     ax1.set_ylabel('error')
+        #     ax1.set_xlabel('evaluations')
+        #     ax1.set_ylim([0, np.max(hist_best_f[:evalcount])])
 
-            #     ax2 = plt.subplot(132)
-            #     line2 = ax2.plot(np.arange(itercount), hist_temperature[:itercount])[0]
-            #     ax2.set_title('temperature')
-            #     ax2.set_ylabel('T')
-            #     ax2.set_xlabel('iteration')
-            #     ax2.set_ylim([0, T])
+        #     ax2 = plt.subplot(132)
+        #     line2 = ax2.plot(np.arange(itercount), hist_temperature[:itercount])[0]
+        #     ax2.set_title('temperature')
+        #     ax2.set_ylabel('T')
+        #     ax2.set_xlabel('iteration')
+        #     ax2.set_ylim([0, T])
 
-            #     ax3 = plt.subplot(133)
-            #     bars3 = ax3.bar(np.arange(len(solution_optimal)), solution_optimal)
-            #     ax3.set_title('best representation')
-            #     ax3.set_ylabel('value')
-            #     ax3.set_xlabel('representation index')
+        #     ax3 = plt.subplot(133)
+        #     bars3 = ax3.bar(np.arange(len(solution_optimal)), solution_optimal)
+        #     ax3.set_title('best representation')
+        #     ax3.set_ylabel('value')
+        #     ax3.set_xlabel('representation index')
 
-            #     plt.show(block=False)
-            
-            evalcount = 0
-            itercount = 0
+        #     plt.show(block=False)
+        
+        evalcount = 0
+        itercount = 0
 
-            # Statistics data
-            hist_best_f = np.array([np.nan] * evaluations)
-            num_iterations = int(np.ceil(evaluations / self.iter_length))
-            hist_iter_f = np.array([np.nan] * num_iterations)
-            hist_temperature = np.array([np.nan] * num_iterations)
-
-
-            # Generate initial solution and evaluate
-            solution_optimal = generate_random_answer(n, dim)
-            fitness_optimal = evaluate(x)  # evaluate the solution
-            solution = copy(solution_optimal)
-            fitness = fitness_optimal
+        # Statistics data
+        hist_best_f = np.array([np.nan] * evaluations)
+        num_iterations = int(np.ceil(evaluations / self.iter_length))
+        hist_iter_f = np.array([np.nan] * num_iterations)
+        hist_temperature = np.array([np.nan] * num_iterations)
 
 
-            while evalcount < evaluations:
-                hist_temperature[itercount] = self.T
+        # Generate initial solution and evaluate
+        solution_optimal = self.generate_random_answer(n, dim)
+        fitness_optimal = evaluate(solution_optimal, dim=dim)  # evaluate the solution
+        solution = copy(solution_optimal)
+        fitness = fitness_optimal
 
-                self.iter_length = min(self.iter_length, evaluations-evalcount)
-                for _ in range(self.iter_length):
 
-                    solution_new = mutate_answer(solution, n, dim, self.pm, fitness, fitness_optimal)   # Generate a new solution by permutating the current solution
-                    fitness_new = fitness_func(solution_new)   # evaluate the new solution
+        while evalcount < evaluations:
+            hist_temperature[itercount] = self.T
 
-                    if fitness_new < fitness or np.random.randn() < np.exp(-(fitness_new - fitness) / T):
-                        # Our found mutation is closer to a solution than the current answer, or
-                        # annealing formula mandates we pick this solution, even if it is a bit worse in terms of fitness.
-                        solution = solution_new
-                        fitness = fitness_new
+            self.iter_length = min(self.iter_length, evaluations-evalcount)
+            for _ in range(self.iter_length):
 
-                    if fitness > 2 * fitness_optimal: 
-                        # Reset to the optimal solution if we are too far away from found optimum.
-                        solution = copy(solution_optimal)
-                        fitness = fitness_optimal
-                    
-                    if fitness < fitness_optimal:
-                        # Update the best solution found so far if our current solution is better.
-                        fitness_optimal = fitness
-                        solution_optimal = copy(solution)
+                solution_new = self.mutate_answer(solution, n, dim, self.pm, fitness, fitness_optimal)   # Generate a new solution by permutating the current solution
+                fitness_new = evaluate(solution_new, dim=dim)   # evaluate the new solution
 
-                    hist_best_f[evalcount] = fitness_optimal   # tracking the best fitness ever found
+                if fitness_new < fitness or np.random.randn() < np.exp(-(fitness_new - fitness) / self.T):
+                    # Our found mutation is closer to a solution than the current answer, or
+                    # annealing formula mandates we pick this solution, even if it is a bit worse in terms of fitness.
+                    solution = solution_new
+                    fitness = fitness_new
 
-                    # Generation best statistics
-                    hist_iter_f[itercount] = fitness
-                    
-                    # Plot statistics
-                    # if do_plot:
-                    #     line1.set_data(np.arange(evalcount), hist_best_f[:evalcount])
-                    #     ax1.set_xlim([0, evalcount])
-                    #     ax1.set_ylim([0, np.max(hist_best_f[:evalcount])])
+                if fitness > 2 * fitness_optimal: 
+                    # Reset to the optimal solution if we are too far away from found optimum.
+                    solution = copy(solution_optimal)
+                    fitness = fitness_optimal
+                
+                if fitness < fitness_optimal:
+                    # Update the best solution found so far if our current solution is better.
+                    fitness_optimal = fitness
+                    solution_optimal = copy(solution)
 
-                    #     line2.set_data(np.arange(itercount), hist_temperature[:itercount])
-                    #     ax2.set_xlim([0, itercount])
+                hist_best_f[evalcount] = fitness_optimal   # tracking the best fitness ever found
 
-                    #     for bar, h in zip(bars3, solution_optimal):
-                    #         bar.set_height(h)
+                # Generation best statistics
+                hist_iter_f[itercount] = fitness
+                
+                # Plot statistics
+                # if do_plot:
+                #     line1.set_data(np.arange(evalcount), hist_best_f[:evalcount])
+                #     ax1.set_xlim([0, evalcount])
+                #     ax1.set_ylim([0, np.max(hist_best_f[:evalcount])])
 
-                    #     plt.pause(0.00001)
-                    #     plt.draw()
-                    evalcount += 1   # Increase evaluation counter
-                T = alpha * T
+                #     line2.set_data(np.arange(itercount), hist_temperature[:itercount])
+                #     ax2.set_xlim([0, itercount])
 
-                print(f'{evalcount}: current fitness: {fitness_optimal}')
-                itercount += 1   # Increase iteration counter
+                #     for bar, h in zip(bars3, solution_optimal):
+                #         bar.set_height(h)
 
-            # if return_stats:
-            #     return solution_optimal, fitness_optimal, hist_best_f
-            # else:
-            #     return solution_optimal, fitness_optimal
-            return solution_optimal
+                #     plt.pause(0.00001)
+                #     plt.draw()
+                evalcount += 1   # Increase evaluation counter
+            self.T = self.alpha * self.T
+
+            print(f'{evalcount}: current fitness: {fitness_optimal}')
+            itercount += 1   # Increase iteration counter
+
+        # if return_stats:
+        #     return solution_optimal, fitness_optimal, hist_best_f
+        # else:
+        #     return solution_optimal, fitness_optimal
+        return solution_optimal
