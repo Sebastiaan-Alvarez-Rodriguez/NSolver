@@ -1,13 +1,16 @@
 #!/usr/bin/python3
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))) # Appends main project root as importpath.
+
+
 import argparse
 
-
 def _get_modules():
-    import data_deploy.cli.clean as clean
-    import data_deploy.cli.deploy as deploy
-    import data_deploy.cli.plugin as plugin
-    return [deploy, clean, plugin]
+    import nsolver.cli.compare as compare
+    import nsolver.cli.run as run
+    return [compare, run]
 
 
 
@@ -16,24 +19,28 @@ def generic_args(parser):
     parser.add_argument('--verbose', type=bool, help='Print more verbose output for debugging', action='store_true')
 
 
-
-def subparser(parser):
-    '''Register subparser modules.'''
-    generic_args(parser)
-    subparsers = parser.add_subparsers(help='Subcommands', dest='command')
-    return [x.subparser(subparsers) for x in _get_modules()]
-
-
-
-def cli(parser):
+def build_cli(parser):
     '''Adds commandline interface (cli) parsers and arguments as needed for each cli module.
     Args:
         parser (argparse.Parser): Base parser to extend.'''
-    subparsers = parser.add_subparsers(help='Subcommands', dest='command')
+    subsection = parser.add_subparsers(help='Subcommands', dest='command')
+    subparsers = [subsection.add_parser(module.__name__, help=module.__help__) for module in _get_modules()] 
+    for subparser, module in zip(subparsers, _get_modules()):
+        module.build_cli(subparser)
+    return subparsers
 
-    for module in _get_modules():
-        sub = subparsers.add_parser(module.__name__, module.__help__)
-        module.cli(sub)
+
+def run(parser, subparsers, args):
+    '''Searches for the correct CLI module to invoke for given input, and calls its `run()` method.
+    Args:
+        parser (argparse.Parser): Main parser.
+        subparsers (iterable(argparse.Parser): Subparsers, 1 for each module.
+        args (argparse.dict): Arguments set through CLI.'''
+    for subparser, module in zip(subparsers, _get_modules()):
+        if module.__name__ == args.command:
+            return module.run(subparser, args)
+    parser.print_help()
+    return False
 
 
 def main():
@@ -42,11 +49,12 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='Compare optimizers on N-cubes.'
     )
-    cli(parser)
+    subparsers = build_cli(parser)
     retval = True
 
     args = parser.parse_args()
-    retval = run(args.evaluations, args.filterrs, args.paths, verbose=args.verbose)
+
+    retval = run(parser, subparsers, args)
 
     if isinstance(retval, bool):
         exit(0 if retval else 1)

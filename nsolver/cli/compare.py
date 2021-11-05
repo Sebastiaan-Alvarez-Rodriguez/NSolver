@@ -19,8 +19,18 @@ __name__ = 'compare'
 __help__ = 'Execute comperator for multiple solvers.'
 
 
-def cli(parser):
+def build_cli(parser):
+    parser.add_argument('paths', metavar='paths', nargs='+', help='Paths to search for solver implementations. Pointed locations can be files or directories. Separate locations using spaces.')
     parser.add_argument('--evaluations', metavar='amount', type=int, default=10000, help='Amount of evaluations per parser (default=10,000). A higher number takes longer.')
-    parser.add_argument('--key-path', dest='key_path', type=str, default=None, help='Path to ssh key to access nodes.')
     parser.add_argument('--filters', metavar='filter', type=str, default=None, help='If set, only executes solvers with names matching given regex. To supply multiple regexes, split regexes with ":".')
-    parser.add_argument('--paths', metavar='paths', nargs='+', help='Paths to search for solver implementations. Pointed locations can be files or directories. Separate locations using spaces.')
+
+
+def run(parser, args):
+    print('Searching for optimizers...')
+    optimizers = get_optimizers(args.paths, filters=args.filters)
+    if args.verbose:
+        for k,v in optimizers.items():
+            print(f'    Found {len(v):03d} optimizers in path {k}')
+    prints(f'    Found {sum(x for x in optimizers.values())} optimizers.')
+    # TODO: Implement me
+    return True
