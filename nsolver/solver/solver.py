@@ -9,6 +9,16 @@ class Solver(object):
         pass
 
 
+    @staticmethod
+    def from_config(path):
+        '''Builds this Solver using given configuration file.
+        Args:
+            path (str or Path): path to configuration file.
+        Returns:
+            Solver: Solver implementation created from the configuration file.'''
+        raise NotImplementedError('This solver does not support loading from a configuration file.')
+
+
     def execute(self, n, dim, evaluations):
         '''Execute this solver for the perfect cube problem, using given args.
         Args:

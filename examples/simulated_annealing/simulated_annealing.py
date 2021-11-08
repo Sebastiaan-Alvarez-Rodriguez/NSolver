@@ -1,19 +1,44 @@
 from nsolver.solver import Solver, evaluate
 
+import configparser
 from copy import copy
 import numpy as np
+import os
 
 
 def get_solver():
     return SimulatedAnnealing
 
+
 class SimulatedAnnealing(Solver):
+    __version__ = 1.0
+    
     '''Simulated annealing algorithm to solve magic N-cubes.'''
-    def __init__(self):
-        self.T = 250000         # Annealing temperature
-        self.alpha = 0.9       # temperature decaying parameter
-        self.pm = 2            # mutation rate
-        self.iter_length = 100 # number of evaluations per iteration
+    def __init__(self, T=250000, alpha=0.9, pm=2, iter_length=100):
+
+        self.T = T                     # Annealing temperature
+        self.alpha = alpha             # temperature decaying parameter
+        self.pm = pm                   # mutation rate
+        self.iter_length = iter_length # number of evaluations per iteration
+
+
+    @staticmethod
+    def from_config(path):
+        '''Builds this Solver using given configuration file.
+        Args:
+            path (str or Path): path to configuration file.
+        Returns:
+            Solver: Solver implementation created from the configuration file.'''
+        parser = configparser.ConfigParser()
+        parser.optionxform=str
+        parser.read(path)
+        if parser['NSolver']['solver'] != 'SimulatedAnnealing':
+            raise ValueError(f'Config is made for another solver named "{parser["NSolver"]["solver"]}", expected "SimulatedAnnealing".')
+
+        if float(parser['NSolver']['version']) != SimulatedAnnealing.__version__:
+            raise ValueError(f'Expected to find version "{SimulatedAnnealing.__version__}", but found version "{parser["NSolver"]["version"]}"')
+        default = parser['DEFAULT']
+        return SimulatedAnnealing(T=int(default['T']), alpha=float(default['alpha']), pm=int(default['pm']), iter_length=int(default['iter_length']))
 
 
     @staticmethod

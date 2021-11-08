@@ -48,7 +48,7 @@ def is_solver(path):
     Args:
         path (str or Path): Path to test.
     Returns:
-        (bool, Solver): `True`, solver on success, `False`, `None` on failure.'''
+        (bool, Solver class): `True`, solver on success, `False`, `None` on failure.'''
     try:
         return True, _import_and_validate(path)
     except Exception as e:
