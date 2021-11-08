@@ -1,6 +1,8 @@
 from nsolver import get_solver, is_solution
 from nsolver.utils.printer import *
 
+import time
+
 __name__ = 'run'
 __help__ = 'Execute a solver.'
 
@@ -16,7 +18,6 @@ def print_solution(solution, size, dimension):
         for x in range(size):
             print(' '.join(f'{solution[dim*size*size+x*size+y]:02d}' for y in range(size)))
         print('')
-    print(solution)
 
 
 def run(parser, args):
@@ -30,11 +31,13 @@ def run(parser, args):
     print(f'Executing solver for {args.evaluations} evaluations.')
 
     instance = solver_class()
+    t0 = time.time()
     solution = instance.execute(args.size, args.dimension, args.evaluations)
+    t_delta = time.time() - t0
 
     print_solution(solution, args.size, args.dimension)
     if is_solution(solution, dim=args.dimension):
-        prints('Obtained value is a magic cube.')
+        prints(f'({t_delta:03f}s) Obtained value is a magic cube.')
     else:
-        printw('Obtained value is not a magic cube.')
+        printw(f'({t_delta:03f}s) Obtained value is not a magic cube.')
     return True

@@ -57,6 +57,13 @@ class SimulatedAnnealing(Solver):
 
 
     def execute(self, n, dim, evaluations):
+        '''Perform simulated annealing for the perfect cube problem, using given args.
+        Args:
+            n (list(int)): List of numbers to form a magic cube. The first n entries form row 0, the next n entries row 1, etc.
+            dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.
+            evaluations (int): Maximum number of evaluations to perform.
+        Returns:
+            list(int): found solution.'''
         # if do_plot:
         #     plt.ion()
         #     fig = plt.figure()
@@ -99,11 +106,8 @@ class SimulatedAnnealing(Solver):
         solution = copy(solution_optimal)
         fitness = fitness_optimal
 
-        if fitness_optimal == 0.0:
-            print('NOOOOOOOOO')
-            return
 
-        while evalcount < evaluations and fitness_optimal > 0.0:
+        while evalcount < evaluations and fitness_optimal > 0.0: # We continue until we are out of budget or until we have found a solution
             hist_temperature[itercount] = self.T
 
             self.iter_length = min(self.iter_length, evaluations-evalcount)
