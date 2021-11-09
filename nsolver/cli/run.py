@@ -15,33 +15,39 @@ def build_cli(parser):
 
 
 def print_solution(solution, size, dimension):
+    print(solution)
     for dim in range(size**(dimension-2)):
         for x in range(size):
             print(' '.join(f'{solution[dim*size*size+x*size+y]:02d}' for y in range(size)))
         print('')
 
 
+def _run(parser, args):
+    if args.with_config:
+        print(f'Loading optimizer with config ({args.with_config})...')
+    else:
+        print('Loading optimizer...')
+
+    solver_class = get_solver(args.path)
+    print(f'Executing solver for {args.evaluations} evaluations.')
+
+    instance = solver_class.from_config(args.with_config) if args.with_config else solver_class() 
+    t0 = time.time()
+    solution = instance.execute(args.size, args.dimension, args.evaluations, args.verbose)
+    t_delta = time.time() - t0
+
+    print_solution(solution, args.size, args.dimension)
+    if is_solution(solution, dim=args.dimension):
+        prints(f'({t_delta:03f}s) Obtained value is a magic cube.')
+    else:
+        printw(f'({t_delta:03f}s) Obtained value is not a magic cube.')
+    return True
+
 def run(parser, args):
+    if args.verbose:
+        return _run(parser, args)
     try:
-        if args.with_config:
-            print(f'Loading optimizer with config ({args.with_config})...')
-        else:
-            print('Loading optimizer...')
-
-        solver_class = get_solver(args.path)
-        print(f'Executing solver for {args.evaluations} evaluations.')
-
-        instance = solver_class.from_config(args.with_config) if args.with_config else solver_class() 
-        t0 = time.time()
-        solution = instance.execute(args.size, args.dimension, args.evaluations)
-        t_delta = time.time() - t0
-
-        print_solution(solution, args.size, args.dimension)
-        if is_solution(solution, dim=args.dimension):
-            prints(f'({t_delta:03f}s) Obtained value is a magic cube.')
-        else:
-            printw(f'({t_delta:03f}s) Obtained value is not a magic cube.')
-        return True
+        return _run(parser, args)
     except Exception as e:
         printe(str(e))
         return False

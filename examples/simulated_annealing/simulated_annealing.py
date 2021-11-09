@@ -15,7 +15,6 @@ class SimulatedAnnealing(Solver):
     
     '''Simulated annealing algorithm to solve magic N-cubes.'''
     def __init__(self, T=250000, alpha=0.9, pm=2, iter_length=100):
-
         self.T = T                     # Annealing temperature
         self.alpha = alpha             # temperature decaying parameter
         self.pm = pm                   # mutation rate
@@ -81,12 +80,13 @@ class SimulatedAnnealing(Solver):
         return s_cpy
 
 
-    def execute(self, n, dim, evaluations):
+    def execute(self, n, dim, evaluations, verbose):
         '''Perform simulated annealing for the perfect cube problem, using given args.
         Args:
             n (list(int)): List of numbers to form a magic cube. The first n entries form row 0, the next n entries row 1, etc.
             dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.
             evaluations (int): Maximum number of evaluations to perform.
+            verbose (bool): If set, print more output.
         Returns:
             list(int): found solution.'''
         # if do_plot:
@@ -179,7 +179,8 @@ class SimulatedAnnealing(Solver):
                 evalcount += 1   # Increase evaluation counter
             self.T = self.alpha * self.T
 
-            print(f'{evalcount} (T={self.T:.02f}): current fitness: {fitness_optimal}')
+            if verbose:
+                print(f'{evalcount} (T={self.T:.02f}): current fitness: {fitness_optimal}')
             itercount += 1   # Increase iteration counter
 
         # if return_stats:

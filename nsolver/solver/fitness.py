@@ -50,9 +50,10 @@ def raise_representation_error(num_numbers, required_numbers, representation):
     missing = required_numbers - set(representation)
     not_belong = set(representation) - required_numbers
     not_belong = None if not any(not_belong) else not_belong
-    raise ValueError(f'''Invalid representation! The solution should be a permutation of 1,...,{n}
+    raise ValueError(f'''Invalid representation! The solution should be a permutation of 1,...,{num_numbers}
 Missing numbers: {missing}
-Numbers that do not belong: {not_belong}''')
+Numbers that do not belong: {not_belong}
+Array: {representation}''')
 
 
 def _verify_square(square):
