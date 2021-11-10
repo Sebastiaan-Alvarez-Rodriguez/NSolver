@@ -12,7 +12,7 @@ def get_solver():
 
 class SimulatedAnnealing(Solver):
     __version__ = 1.0
-    
+
     '''Simulated annealing algorithm to solve magic N-cubes.'''
     def __init__(self, T=250000, alpha=0.9, pm=2, iter_length=100):
         self.T = T                     # Annealing temperature

@@ -9,16 +9,36 @@ from copy import copy
 import numpy as np
 import os
 
-
 def get_solver():
     return GeneticAlgorithm
 
 class GeneticAlgorithm(Solver):
+    __version__ = 1.0
 
-    def __init__(self):
+    def __init__(self, pc=0.7, pm=0.7):
         # endogenous parameters setting
-        self.pc = 0.9          # crossover rate
-        self.pm = 0.3          # mutation rate
+        self.pc = pc          # crossover rate
+        self.pm = pm          # mutation rate
+
+
+    @staticmethod
+    def from_config(path):
+        '''Builds this Solver using given configuration file.
+        Args:
+            path (str or Path): path to configuration file.
+        Returns:
+            Solver: Solver implementation created from the configuration file.'''
+        parser = configparser.ConfigParser()
+        parser.optionxform=str
+        parser.read(path)
+        if parser['NSolver']['solver'] != 'GeneticAlgorithm':
+            raise ValueError(f'Config is made for another solver named "{parser["NSolver"]["solver"]}", expected "GeneticAlgorithm".')
+
+        if float(parser['NSolver']['version']) != GeneticAlgorithm.__version__:
+            raise ValueError(f'Expected to find version "{GeneticAlgorithm.__version__}", but found version "{parser["NSolver"]["version"]}"')
+        default = parser['DEFAULT']
+        return GeneticAlgorithm(pc=float(default['pc']), pm=float(default['pm']))
+
 
 
     def execute(self, n, dim, evaluations, verbose):
@@ -51,15 +71,13 @@ class GeneticAlgorithm(Solver):
         # row vector representation is used throughout this code
         pop_fitness = np.zeros(mu)
         # population
-        pop_geno = np.zeros((mu, geno_len))
+        pop_geno = np.zeros((mu, geno_len), dtype=int)
 
         # Initialize all members of population a random value [1, n^dim]) and evaluates
         for i in range(mu):
             pop_geno[i, :] = np.random.permutation(range(1, geno_len+1))
             pop_fitness[i] = evaluate(pop_geno[i, :], dim=dim)
         index = np.argmin(pop_fitness)
-
-        print(f'First pop: {pop_geno[i]}')
 
         # Generate initial solution and evaluate
 
@@ -136,10 +154,8 @@ class GeneticAlgorithm(Solver):
 
         # ----------------------- Evolution loop ------------------------------
         # https://blackboard.leidenuniv.nl/bbcswebdav/pid-4458530-dt-content-rid-5832938_1/courses/4032NACO6-1819FWN/3b%20-%20Evolutionary_Algorithms.pdf
-        print('Beginning loop')
 
         while evalcount < evaluations and fitness_optimal > 0.0:
-            pop_new_geno = np.zeros((mu, geno_len))
             #generate normal fitness
             total_fitness = sum(1/(pop_fitness**30))
             normal_fitness = np.divide(1/(pop_fitness**30), total_fitness)
@@ -154,34 +170,28 @@ class GeneticAlgorithm(Solver):
 
                     crossover_point_left = np.random.randint(0, high=geno_len-1) # choose left point from [0..<highest index -1>]
                     crossover_point_right = np.random.randint(crossover_point_left+1, high=geno_len) # choose right point from [<left point+1>..<highest index>]
-                    for j in range(crossover_point_left,crossover_point_right+1):
-                        pop_new_geno[i, j] = pop_geno[p1,j]
 
-                    for x in range(crossover_point_left:crossover_point_right): # In-place crossover (is there std::swap maybe?)
+                    for x in range(crossover_point_left, crossover_point_right): # In-place crossover (is there std::swap maybe?)
                         backup = pop_geno[p1][x]
                         pop_geno[p1][x] = pop_geno[p2][x]
                         pop_geno[p2][x] = backup
 
-                    # print(f'c_l={crossover_point_left}; {pop_geno[p1]}: {pop1_left} ----- {pop1_right}')
-                    
-                    # TODO: Need a way to repair broken geno's! Maybe below thingie?
-                    #copy all values in correct order in new geno, if unique afterwards
-                    cur_index = crossover_point_right+1
-                    while pop_new_geno[i,cur_index%geno_len] == 0:
-                        for j in range(2*(geno_len-(crossover_point_right-crossover_point_left))):
-                            if not tmp_checkarray[j] in pop_new_geno[i, :]:
-                                pop_new_geno[i,cur_index%geno_len] = tmp_checkarray[j]
-                                cur_index += 1
-                else: # No crossover, copy parent chromosome
-                    pop_new_geno[i] = pop_geno[p1]
+                    # Repair broken genotypes: After crossover, there are potentially double and missing items in both pops.
+                    for arr in [pop_geno[p1], pop_geno[p2]]:
+                        seen_it = [False for x in range(geno_len)]
+                        for idx, x in enumerate(arr):
+                            if not seen_it[x-1]:
+                                seen_it[x-1] = True
+                            else: # We got a double occurance
+                                new_val = next(idx2+1 for idx2, x2 in enumerate(seen_it) if not x2)
+                                arr[idx] = new_val
+                                seen_it[new_val-1] = True
 
                 if np.random.randn() < self.pm: # swap mutation (no repair needed by operation)
                     mutation_left = np.random.randint(0, high=geno_len-1)
                     mutation_right= np.random.randint(mutation_left+1, high=geno_len)
-                    pop_new_geno[i, mutation_left], pop_new_geno[i, mutation_right] = pop_new_geno[i, mutation_right], pop_new_geno[i, mutation_left]
+                    pop_geno[i, mutation_left], pop_geno[i, mutation_right] = pop_geno[i, mutation_right], pop_geno[i, mutation_left]
 
-            # Replace old population by the newly generated population
-            pop_geno = pop_new_geno
 
             for i in range(mu):
                 pop_fitness[i] = evaluate(pop_geno[i, :], dim=dim)
@@ -243,4 +253,4 @@ class GeneticAlgorithm(Solver):
             #     plt.draw()
         # plt.clf()
         # plt.close('all')
-        return [int(x) for x in solution_optimal]
+        return solution_optimal
