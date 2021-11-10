@@ -15,10 +15,11 @@ def get_solver():
 class GeneticAlgorithm(Solver):
     __version__ = 1.0
 
-    def __init__(self, pc=0.7, pm=0.7):
+    def __init__(self, pc=0.7, pm=0.7, fitness_weight=4.0):
         # endogenous parameters setting
         self.pc = pc          # crossover rate
         self.pm = pm          # mutation rate
+        self.fitness_weight = fitness_weight # impact of fitness on chance of being chosen
 
 
     @staticmethod
@@ -37,7 +38,7 @@ class GeneticAlgorithm(Solver):
         if float(parser['NSolver']['version']) != GeneticAlgorithm.__version__:
             raise ValueError(f'Expected to find version "{GeneticAlgorithm.__version__}", but found version "{parser["NSolver"]["version"]}"')
         default = parser['DEFAULT']
-        return GeneticAlgorithm(pc=float(default['pc']), pm=float(default['pm']))
+        return GeneticAlgorithm(pc=float(default['pc']), pm=float(default['pm']), fitness_weight=float(default['fitness_weight']))
 
 
 
@@ -157,8 +158,8 @@ class GeneticAlgorithm(Solver):
 
         while evalcount < evaluations and fitness_optimal > 0.0:
             #generate normal fitness
-            total_fitness = sum(1/(pop_fitness**30))
-            normal_fitness = np.divide(1/(pop_fitness**30), total_fitness)
+            total_fitness = sum(1/(pop_fitness**self.fitness_weight))
+            normal_fitness = np.divide(1/(pop_fitness**self.fitness_weight), total_fitness)
             # generate the a new population using crossover and mutation
             for i in range(mu):
                 p1 = np.random.choice(range(mu), p=normal_fitness, replace=False)
