@@ -14,12 +14,8 @@ class Random(Solver):
     __version__ = 1.0
 
     '''Simulated annealing algorithm to solve magic N-cubes.'''
-    def __init__(self, T=250000, alpha=0.9, pm=2, iter_length=100):
-        self.T = T                     # Annealing temperature
-        self.alpha = alpha             # temperature decaying parameter
-        self.pm = pm                   # mutation rate
-        self.iter_length = iter_length # number of evaluations per iteration
-
+    def __init__(self):
+        pass
 
     @staticmethod
     def from_config(path):
@@ -28,16 +24,7 @@ class Random(Solver):
             path (str or Path): path to configuration file.
         Returns:
             Solver: Solver implementation created from the configuration file.'''
-        parser = configparser.ConfigParser()
-        parser.optionxform=str
-        parser.read(path)
-        if parser['NSolver']['solver'] != 'Random':
-            raise ValueError(f'Config is made for another solver named "{parser["NSolver"]["solver"]}", expected "Random".')
-
-        if float(parser['NSolver']['version']) != Random.__version__:
-            raise ValueError(f'Expected to find version "{Random.__version__}", but found version "{parser["NSolver"]["version"]}"')
-        default = parser['DEFAULT']
-        return Random(T=int(default['T']), alpha=float(default['alpha']), pm=int(default['pm']), iter_length=int(default['iter_length']))
+        return Random() # We have no parameters to handle
 
 
     @staticmethod
