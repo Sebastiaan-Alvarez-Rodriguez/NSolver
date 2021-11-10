@@ -1,4 +1,4 @@
-
+from nsolver import get_solvers
 
 '''
 Optimizer comperator for N-cube solvers.
@@ -25,11 +25,18 @@ def build_cli(parser):
     parser.add_argument('--filters', metavar='filter', type=str, default=None, help='If set, only executes solvers with names matching given regex. To supply multiple regexes, split regexes with ":".')
 
 
+def print_solution(solution, size, dimension):
+    for dim in range(size**(dimension-2)):
+        for x in range(size):
+            print(' '.join(f'{solution[dim*size*size+x*size+y]:02d}' for y in range(size)))
+        print('')
+
+
 def run(parser, args):
     print('Searching for optimizers...')
-    optimizers = get_optimizers(args.paths, filters=args.filters)
+    solvers = get_solvers(args.paths, filters=args.filters)
     if args.verbose:
-        for k,v in optimizers.items():
+        for k,v in solvers.items():
             print(f'    Found {len(v):03d} optimizers in path {k}')
     prints(f'    Found {sum(x for x in optimizers.values())} optimizers.')
     # TODO: Implement me

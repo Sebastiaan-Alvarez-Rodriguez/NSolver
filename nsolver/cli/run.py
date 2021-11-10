@@ -21,7 +21,7 @@ def print_solution(solution, size, dimension):
         print('')
 
 
-def _run(parser, args):
+def run(parser, args):
     if args.with_config:
         print(f'Loading optimizer with config ({args.with_config})...')
     else:
@@ -40,13 +40,4 @@ def _run(parser, args):
         prints(f'({t_delta:03f}s) Obtained value is a magic cube.')
     else:
         printw(f'({t_delta:03f}s) Obtained value is not a magic cube.')
-    return True
-
-def run(parser, args):
-    if args.verbose:
-        return _run(parser, args)
-    try:
-        return _run(parser, args)
-    except Exception as e:
-        printe(str(e))
-        return False
+    return True    

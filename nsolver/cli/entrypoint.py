@@ -40,7 +40,14 @@ def run(parser, subparsers, args):
         args (argparse.dict): Arguments set through CLI.'''
     for subparser, module in zip(subparsers, _get_modules()):
         if module.__name__ == args.command:
-            return module.run(subparser, args)
+                if args.verbose:
+                    return module.run(subparser, args)
+                else:
+                    try:
+                        return module.run(subparser, args)
+                    except Exception as e:
+                        printe(str(e))
+                        return False
     parser.print_help()
     return False
 

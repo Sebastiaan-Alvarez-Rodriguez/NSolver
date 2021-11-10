@@ -73,7 +73,7 @@ def get_solvers(path, max_workers=1):
         path (str or Path): Path to test. Can be a directory, in which case searching continues recursively.
         max_workers (optional int): Amount of cores to search and load with. Must be >1.
     Returns:
-        dict(Path, (bool, solver): A mapping of potential paths to a bool (whether the path contains an solver) and an solver class (the imported solver or `None`). '''
+        dict(Path, (bool, solver): A mapping of potential paths to a bool (whether the path contains an solver) and a solver class (the imported solver or `None`). '''
     if max_workers < 1:
         raise ValueError('get_solvers requires at least 1 worker to search for solvers.')
     
@@ -83,6 +83,6 @@ def get_solvers(path, max_workers=1):
             vals[path] = _import_and_validate(path)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures_get_solvers = {x: executor.submit(solver.get_solvers, x) for path in _find_potential_solvers(path)}
+            futures_get_solvers = {x: executor.submit(solver.is_solver, x) for x in _find_potential_solvers(path)}
             vals = {k: v.result() for k,v in futures_get_solvers.items()}
     return vals
