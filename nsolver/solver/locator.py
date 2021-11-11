@@ -12,12 +12,13 @@ def _find_potential_solvers(path):
     Returns:
         list(Path): All paths to a .py file.'''
     found = []
-    for x in fs.ls(path, full_paths=True):
-        p = Path(x)
-        if p.isfile and str(p).endswith('.py'):
-            found.append(p)
-        elif p.isdir:
-            found.extend(find_projects(path))
+    if fs.isdir(path):
+        for x in fs.ls(path, full_paths=True):
+            p = Path(x)
+            if p.is_file and str(p).endswith('.py'):
+                found.append(p)
+            elif p.is_dir:
+                found.extend(_find_potential_solvers(p))
     return found
 
 
@@ -67,20 +68,24 @@ def get_solver(path):
     return _import_and_validate(path)
 
 
-def get_solvers(path, max_workers=1):
+def get_solvers(path, max_workers=1, filters=None):
     '''Finds and loads all solvers found for a given path.
     Args:
         path (str or Path): Path to test. Can be a directory, in which case searching continues recursively.
         max_workers (optional int): Amount of cores to search and load with. Must be >1.
+        filters (optional str): If set, only returns solvers with names matching given regex. To supply multiple regexes, split regexes with ":".
     Returns:
         dict(Path, (bool, solver): A mapping of potential paths to a bool (whether the path contains an solver) and a solver class (the imported solver or `None`). '''
     if max_workers < 1:
         raise ValueError('get_solvers requires at least 1 worker to search for solvers.')
-    
+
+    if fs.isfile(path):
+        return {path: is_solver(path)}
+
     vals = {}
     if max_workers == 1:
         for path in _find_potential_solvers(path):
-            vals[path] = _import_and_validate(path)
+            vals[path] = is_solver(path)
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures_get_solvers = {x: executor.submit(solver.is_solver, x) for x in _find_potential_solvers(path)}

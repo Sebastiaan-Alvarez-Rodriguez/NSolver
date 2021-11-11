@@ -1,4 +1,7 @@
+from nsolver.utils.printer import *
 from nsolver import get_solvers
+
+import itertools
 
 '''
 Optimizer comperator for N-cube solvers.
@@ -33,11 +36,15 @@ def print_solution(solution, size, dimension):
 
 
 def run(parser, args):
-    print('Searching for optimizers...')
-    solvers = get_solvers(args.paths, filters=args.filters)
+    print('Searching for solvers...')
+    solvers = {}
+    for x in itertools.chain(get_solvers(path, filters=args.filters) for path in args.paths):
+        solvers.update(x)
+
+    prints(f'Found {sum(1 for x in solvers.values() if x[0])} solver(s).')
     if args.verbose:
         for k,v in solvers.items():
-            print(f'    Found {len(v):03d} optimizers in path {k}')
-    prints(f'    Found {sum(x for x in optimizers.values())} optimizers.')
-    # TODO: Implement me
+            if v[0]:
+                print(f'    {k}')
+
     return True

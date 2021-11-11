@@ -20,7 +20,7 @@ def import_full_path(full_path):
     '''Import a library from a filesystem full path (i.e. starting from root)
     Returns:
         Imported module.'''
-    module_name = '.'.join(full_path.split(os.path.sep))
+    module_name = '.'.join(str(full_path).split(os.path.sep))
     if sys.version_info >= (3, 6):
         import importlib.util
         spec = importlib.util.spec_from_file_location(module_name, full_path)
