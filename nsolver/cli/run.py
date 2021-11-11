@@ -1,4 +1,4 @@
-from nsolver import get_solver, is_solution
+from nsolver import get_solver, is_solution, evaluate
 from nsolver.utils.printer import *
 
 import time
@@ -21,23 +21,30 @@ def print_solution(solution, size, dimension):
         print('')
 
 
+def execute(instance, evaluations, size, dimension, verbose=False):
+    t0 = time.time()
+    solution = instance.execute(size, dimension, evaluations, verbose)
+    t_delta = time.time() - t0
+
+    return solution, t_delta, evaluate(solution, dim=dimension)
+
+
 def run(parser, args):
     if args.with_config:
         print(f'Loading optimizer with config ({args.with_config})...')
     else:
         print('Loading optimizer...')
 
-    solver_class = get_solver(args.path)
     print(f'Executing solver for {args.evaluations} evaluations.')
 
+    solver_class = get_solver(args.path)
     instance = solver_class.from_config(args.with_config) if args.with_config else solver_class() 
-    t0 = time.time()
-    solution = instance.execute(args.size, args.dimension, args.evaluations, args.verbose)
-    t_delta = time.time() - t0
+
+    solution, t_delta, fitness = execute(instance, args.evaluations, args.size, args.dimension, verbose=args.verbose)
 
     print_solution(solution, args.size, args.dimension)
     if is_solution(solution, dim=args.dimension):
         prints(f'({t_delta:03f}s) Obtained value is a magic cube.')
     else:
         printw(f'({t_delta:03f}s) Obtained value is not a magic cube.')
-    return True    
+    return True

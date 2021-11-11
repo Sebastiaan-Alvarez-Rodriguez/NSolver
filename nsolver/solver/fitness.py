@@ -74,7 +74,7 @@ def _verify_square(square):
 def _verify_cube(cube):
     n = len(cube) ** (1 / 3)
     if np.round(n) ** 3 != len(cube):
-        raise ValueError("Invalid length! The solution length should be a cubic number")
+        raise ValueError('Invalid length! The solution length should be a cubic number')
     n = int(np.round(n))
 
     required_numbers = set(range(1, n**3+1))

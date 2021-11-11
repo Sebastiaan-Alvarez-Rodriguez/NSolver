@@ -180,7 +180,8 @@ class SimulatedAnnealing(Solver):
             self.T = self.alpha * self.T
 
             if verbose:
-                print(f'{evalcount} (T={self.T:.02f}): current fitness: {fitness_optimal}')
+                if verbose and evalcount % (evaluations/10) == 0:
+                    print(f'{evalcount} (T={self.T:.02f}): current fitness: {fitness_optimal}')
             itercount += 1   # Increase iteration counter
 
         # if return_stats:
