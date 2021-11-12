@@ -6,11 +6,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 
 import argparse
+from nsolver.utils.printer import *
+
+
+'''Entrypoint for NSolver. We build the commandline parser module, and forward commands to the correct submodules.'''
+
+
 
 def _get_modules():
+    '''Returns modules to built commandline submodules for.'''
     import nsolver.cli.compare as compare
     import nsolver.cli.run as run
-    return [compare, run]
+    import nsolver.cli.search as search
+    return [compare, run, search]
 
 
 
@@ -24,7 +32,9 @@ def generic_args(parser):
 def build_cli(parser):
     '''Adds commandline interface (cli) parsers and arguments as needed for each cli module.
     Args:
-        parser (argparse.Parser): Base parser to extend.'''
+        parser (argparse.Parser): Base parser to extend.
+    Returns:
+        list(Parser): built subparsers.'''
     subsection = parser.add_subparsers(help='Subcommands', dest='command')
     subparsers = [subsection.add_parser(module.__name__, help=module.__help__) for module in _get_modules()] 
     for subparser, module in zip(subparsers, _get_modules()):
@@ -37,7 +47,11 @@ def run(parser, subparsers, args):
     Args:
         parser (argparse.Parser): Main parser.
         subparsers (iterable(argparse.Parser): Subparsers, 1 for each module.
-        args (argparse.dict): Arguments set through CLI.'''
+        args (argparse.dict): Arguments set through CLI.
+    Returns:
+        bool: Whether the execution was a success.
+    Throws:
+        Forwards throws from the executed submodule, (!) only when verbose mode is activated (!).'''
     for subparser, module in zip(subparsers, _get_modules()):
         if module.__name__ == args.command:
                 if args.verbose:
