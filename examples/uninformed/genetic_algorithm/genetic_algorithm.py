@@ -15,6 +15,7 @@ def get_solver():
 class GeneticAlgorithm(Solver):
     __version__ = 1.0
 
+    '''Simulated annealing algorithm to solve magic N-cubes.'''
     def __init__(self, pc=0.7, pm=0.7, fitness_weight=4.0):
         # endogenous parameters setting
         self.pc = pc          # crossover rate
@@ -43,7 +44,7 @@ class GeneticAlgorithm(Solver):
 
 
     def execute(self, n, dim, evaluations, verbose):
-        '''Execute this solver for the perfect cube problem, using given args.
+        '''Execute this solver for the magic N-cube problem, using given args.
         Args:
             n (list(int)): List of numbers to form a magic cube. The first n entries form row 0, the next n entries row 1, etc.
             dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.

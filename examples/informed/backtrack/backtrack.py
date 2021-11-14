@@ -7,13 +7,13 @@ import os
 
 
 def get_solver():
-    return SimulatedAnnealing
+    return Backtrack
 
 
-class SimulatedAnnealing(Solver):
+class Backtrack(Solver):
     __version__ = 1.0
 
-    '''Simulated annealing algorithm to solve magic N-cubes.'''
+    '''Backtracking algorithm to solve magic N-cubes.'''
     def __init__(self, T=250000, alpha=0.9, pm=2, iter_length=100):
         self.T = T                     # Annealing temperature
         self.alpha = alpha             # temperature decaying parameter
@@ -31,13 +31,13 @@ class SimulatedAnnealing(Solver):
         parser = configparser.ConfigParser()
         parser.optionxform=str
         parser.read(path)
-        if parser['NSolver']['solver'] != 'SimulatedAnnealing':
-            raise ValueError(f'Config is made for another solver named "{parser["NSolver"]["solver"]}", expected "SimulatedAnnealing".')
+        if parser['NSolver']['solver'] != 'Backtracking':
+            raise ValueError(f'Config is made for another solver named "{parser["NSolver"]["solver"]}", expected "Backtracking".')
 
-        if float(parser['NSolver']['version']) != SimulatedAnnealing.__version__:
-            raise ValueError(f'Expected to find version "{SimulatedAnnealing.__version__}", but found version "{parser["NSolver"]["version"]}"')
+        if float(parser['NSolver']['version']) != Backtracking.__version__:
+            raise ValueError(f'Expected to find version "{Backtracking.__version__}", but found version "{parser["NSolver"]["version"]}"')
         default = parser['DEFAULT']
-        return SimulatedAnnealing(T=int(default['T']), alpha=float(default['alpha']), pm=int(default['pm']), iter_length=int(default['iter_length']))
+        return Backtracking(T=int(default['T']), alpha=float(default['alpha']), pm=int(default['pm']), iter_length=int(default['iter_length']))
 
 
     @staticmethod
@@ -50,38 +50,40 @@ class SimulatedAnnealing(Solver):
             dim (int): The amount of correlated dimensions (e.g., for a magic cube of x*x*x*x fields (a x-4D cube, n=x and dim=4.'''
         return np.random.permutation(np.arange(1, (n ** dim)+1))
 
+    def sum_row(grid, n, dim, row_idx):
+        return sum(grid[row_idx*n:row_idx*(n+1)])
 
-    @staticmethod
-    def mutate_answer(s, n, dim, pm, fitness, fitness_optimal):
-        '''Mutates our current answer in hopes of finding a closer solution. Returns the permutated solution.
-        The given mutation is a simple swap for a number of times, depending on the difference between the known optimum and given `s`, and `pm`.
-        Args:
-            s (list(int)): current answer to change. Note: Returns a new solution without modifying this parameter.
-            n (int): Axiomial dimension vector length (e.g., for a magic square of 3x3 fields (a 3-2D cube), n=3 and dim=2.
-            dim (int): The amount of correlated dimensions (e.g., for a magic cube of x*x*x*x fields (a x-4D cube, n=x and dim=4.
-            pm (float): Permutation.
-            fitness (double): The fitness value of our current solution `s`.
-            fitness_optimal (double): The fitness value of the currently known most optimal solution.
-        Returns:
-            list(int): The permutated solution.'''
+    def sum_col(grid, n, dim, col_idx):
+        return np.sum(grid[col_idx:col_idx+n**2::n])
 
-        length = n ** dim
-        s_cpy = copy(s)
+    def sum_diagonal(grid, n, dim, col_idx):
+        pass
+        '''
+np.array(a).reshape(4, 4, 4)
+array([[[ 0.,  1.,  2.,  3.],
+        [ 4.,  5.,  6.,  7.],
+        [ 8.,  9., 10., 11.],
+        [12., 13., 14., 15.]],
 
-        # Do more mutations if we are far away from the optimal solution we found
-        diff = max(fitness - fitness_optimal, 1)
-        t_evals = int(np.ceil(diff * pm))
-        
-        # Mutate n times by swapping
-        for i in range(1, t_evals):
-            mut_left = np.random.randint(0, high=length-1)
-            mut_right = np.random.randint(mut_left, high=length)
-            s_cpy[mut_left], s_cpy[mut_right] = s_cpy[mut_right], s_cpy[mut_left]
-        return s_cpy
+       [[16., 17., 18., 19.],
+        [20., 21., 22., 23.],
+        [24., 25., 26., 27.],
+        [28., 29., 30., 31.]],
 
+       [[32., 33., 34., 35.],
+        [36., 37., 38., 39.],
+        [40., 41., 42., 43.],
+        [44., 45., 46., 47.]],
+
+       [[48., 49., 50., 51.],
+        [52., 53., 54., 55.],
+        [56., 57., 58., 59.],
+        [60., 61., 62., 63.]]])
+
+        '''
 
     def execute(self, n, dim, evaluations, verbose):
-        '''Perform simulated annealing for the perfect cube problem, using given args.
+        '''Perform backtracking for the magic N-cube problem, using given args.
         Args:
             n (list(int)): List of numbers to form a magic cube. The first n entries form row 0, the next n entries row 1, etc.
             dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.
@@ -89,40 +91,8 @@ class SimulatedAnnealing(Solver):
             verbose (bool): If set, print more output.
         Returns:
             list(int): found solution.'''
-        # if do_plot:
-        #     plt.ion()
-        #     fig = plt.figure()
-
-        #     ax1 = plt.subplot(131)
-        #     line1 = ax1.plot(hist_best_f[:evalcount])[0]
-        #     ax1.set_title('minimal global error')
-        #     ax1.set_ylabel('error')
-        #     ax1.set_xlabel('evaluations')
-        #     ax1.set_ylim([0, np.max(hist_best_f[:evalcount])])
-
-        #     ax2 = plt.subplot(132)
-        #     line2 = ax2.plot(np.arange(itercount), hist_temperature[:itercount])[0]
-        #     ax2.set_title('temperature')
-        #     ax2.set_ylabel('T')
-        #     ax2.set_xlabel('iteration')
-        #     ax2.set_ylim([0, T])
-
-        #     ax3 = plt.subplot(133)
-        #     bars3 = ax3.bar(np.arange(len(solution_optimal)), solution_optimal)
-        #     ax3.set_title('best representation')
-        #     ax3.set_ylabel('value')
-        #     ax3.set_xlabel('representation index')
-
-        #     plt.show(block=False)
         
-        evalcount = 0
-        itercount = 0
-
-        # Statistics data
-        hist_best_f = np.array([np.nan] * evaluations)
-        num_iterations = int(np.ceil(evaluations / self.iter_length))
-        hist_iter_f = np.array([np.nan] * num_iterations)
-        hist_temperature = np.array([np.nan] * num_iterations)
+        grid = np.zeros(n**dim)
 
 
         # Generate initial solution and evaluate
