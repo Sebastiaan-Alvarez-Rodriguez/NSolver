@@ -1,4 +1,4 @@
-from nsolver.solver import Solver, evaluate
+from nsolver.solver import Solver, evaluate_correct
 
 import configparser
 from copy import copy
@@ -11,10 +11,10 @@ def get_solver():
 
 
 class Backtrack(Solver):
-    __version__ = 1.0
+    _version_ = 1.0
 
     '''Backtracking algorithm to solve magic N-cubes.'''
-    def __init__(self, T=250000, alpha=0.9, pm=2, iter_length=100):
+    def _init_(self, T=250000, alpha=0.9, pm=2, iter_length=100):
         self.T = T                     # Annealing temperature
         self.alpha = alpha             # temperature decaying parameter
         self.pm = pm                   # mutation rate
@@ -34,8 +34,8 @@ class Backtrack(Solver):
         if parser['NSolver']['solver'] != 'Backtracking':
             raise ValueError(f'Config is made for another solver named "{parser["NSolver"]["solver"]}", expected "Backtracking".')
 
-        if float(parser['NSolver']['version']) != Backtracking.__version__:
-            raise ValueError(f'Expected to find version "{Backtracking.__version__}", but found version "{parser["NSolver"]["version"]}"')
+        if float(parser['NSolver']['version']) != Backtracking._version_:
+            raise ValueError(f'Expected to find version "{Backtracking._version_}", but found version "{parser["NSolver"]["version"]}"')
         default = parser['DEFAULT']
         return Backtracking(T=int(default['T']), alpha=float(default['alpha']), pm=int(default['pm']), iter_length=int(default['iter_length']))
 
@@ -50,14 +50,6 @@ class Backtrack(Solver):
             dim (int): The amount of correlated dimensions (e.g., for a magic cube of x*x*x*x fields (a x-4D cube, n=x and dim=4.'''
         return np.random.permutation(np.arange(1, (n ** dim)+1))
 
-    def sum_row(grid, n, dim, row_idx):
-        return sum(grid[row_idx*n:row_idx*(n+1)])
-
-    def sum_col(grid, n, dim, col_idx):
-        return np.sum(grid[col_idx:col_idx+n**2::n])
-
-    def sum_diagonal(grid, n, dim, col_idx):
-        pass
         '''
 np.array(a).reshape(4, 4, 4)
 array([[[ 0.,  1.,  2.,  3.],
@@ -82,6 +74,22 @@ array([[[ 0.,  1.,  2.,  3.],
 
         '''
 
+    def sum_vector(grid, n, dim, row_idx, dim_idx):
+        if dim_idx == 0: # dim_idx = 0 --> x-axis (rows). Rows are sequential numbers in the array, starting on any idx % n == 0.
+            return np.sum(grid[row_idx*n:row_idx*(n+1)])
+        if dim_idx == 1: # dim_idx = 1 --> y-axis (cols). Cols are numbers in the array with n-length jumps between them. 
+            return np.sum(grid[row_idx:row_idx+n**2::n])
+        return np.sum(grid[row_idx:row_idx+n**(dim_idx+1)::n**dim_idx])
+
+    def sum_row(grid, n, dim, row_idx):
+        return sum_vector(grid, n, dim, row_idx, 0)
+
+    def sum_col(grid, n, dim, col_idx):
+        return sum_vector(grid, n, dim, row_idx, 1)
+
+    def sum_diagonal(grid, n, dim, col_idx):
+        pass
+
     def execute(self, n, dim, evaluations, verbose):
         '''Perform backtracking for the magic N-cube problem, using given args.
         Args:
@@ -91,71 +99,44 @@ array([[[ 0.,  1.,  2.,  3.],
             verbose (bool): If set, print more output.
         Returns:
             list(int): found solution.'''
-        
-        grid = np.zeros(n**dim)
+        grid = np.zeros(n**dim, dtype=int)
+        available_nums = np.array([True for x in range(n**dim)])
+        self._exec(grid, available_nums, 0, n**dim, dim)
+        return grid
 
 
-        # Generate initial solution and evaluate
-        solution_optimal = self.generate_random_answer(n, dim)
-        fitness_optimal = evaluate(solution_optimal, dim=dim)  # evaluate the solution
-        solution = copy(solution_optimal)
-        fitness = fitness_optimal
+    def _exec(self, grid, available_nums, idx, max_len, dim):
+        '''Recursive function performing the actual backtracking.
+        Args:
+            grid (np.array(int)): Array representing the current solution state.
+            available_nums (np.array(bool)): Array representing the available numbers to use.
+            idx (int): Current index to evaluate. Recursive iterations will validate the next indices.
+            max_len (int): length of the grid.
+            dim (int): Dimension of the problem.
+        Returns:
+            bool: `True` if we found a solution. `False` otherwise.'''
+        if idx == max_len: # If our grid is filled, we evaluate the correctness. If it is a correct answer, return it.
+            return evaluate_correct(grid, dim=dim)
+
+        for num in _available_get_unused(available_nums):
+            grid[idx] = num
+            _available_set_available(available_nums, num, False)
+            if self._exec(grid, available_nums, idx+1, max_len, dim):
+                return True
+            _available_set_available(available_nums, num) # TODO: What happens when updating array when iterating over it?
+        return False
 
 
-        while evalcount < evaluations and fitness_optimal > 0.0: # We continue until we are out of budget or until we have found a solution
-            hist_temperature[itercount] = self.T
+def _available_get_unused_next(available_nums):
+    return next(_available_get_unused(available_nums))
 
-            self.iter_length = min(self.iter_length, evaluations-evalcount)
-            for _ in range(self.iter_length):
+def _available_get_unused(available_nums):
+    '''fetches the next unused number.
+    Returns:
+        int: next unused number. 
+    Raises:
+        StopIteration: If all numbers are already used'''
+    return (idx+1 for x in enumerate(available_nums) if x)
 
-                solution_new = self.mutate_answer(solution, n, dim, self.pm, fitness, fitness_optimal)   # Generate a new solution by permutating the current solution
-                fitness_new = evaluate(solution_new, dim=dim)   # evaluate the new solution
-
-                if fitness_new < fitness or np.random.randn() < np.exp(-(fitness_new - fitness) / self.T):
-                    # Our found mutation is closer to a solution than the current answer, or
-                    # annealing formula mandates we pick this solution, even if it is a bit worse in terms of fitness.
-                    solution = solution_new
-                    fitness = fitness_new
-
-                if fitness > 2 * fitness_optimal: 
-                    # Reset to the optimal solution if we are too far away from found optimum.
-                    solution = copy(solution_optimal)
-                    fitness = fitness_optimal
-                
-                if fitness < fitness_optimal:
-                    # Update the best solution found so far if our current solution is better.
-                    fitness_optimal = fitness
-                    solution_optimal = copy(solution)
-
-                hist_best_f[evalcount] = fitness_optimal   # tracking the best fitness ever found
-
-                # Generation best statistics
-                hist_iter_f[itercount] = fitness
-                
-                # Plot statistics
-                # if do_plot:
-                #     line1.set_data(np.arange(evalcount), hist_best_f[:evalcount])
-                #     ax1.set_xlim([0, evalcount])
-                #     ax1.set_ylim([0, np.max(hist_best_f[:evalcount])])
-
-                #     line2.set_data(np.arange(itercount), hist_temperature[:itercount])
-                #     ax2.set_xlim([0, itercount])
-
-                #     for bar, h in zip(bars3, solution_optimal):
-                #         bar.set_height(h)
-
-                #     plt.pause(0.00001)
-                #     plt.draw()
-                evalcount += 1   # Increase evaluation counter
-            self.T = self.alpha * self.T
-
-            if verbose:
-                if verbose and evalcount % (evaluations/10) == 0:
-                    print(f'{evalcount} (T={self.T:.02f}): current fitness: {fitness_optimal}')
-            itercount += 1   # Increase iteration counter
-
-        # if return_stats:
-        #     return solution_optimal, fitness_optimal, hist_best_f
-        # else:
-        #     return solution_optimal, fitness_optimal
-        return solution_optimal
+def _available_set_available(self, available_nums, number, value=True):
+    available_nums[number-1] = value

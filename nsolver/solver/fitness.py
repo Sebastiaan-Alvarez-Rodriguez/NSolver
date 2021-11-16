@@ -11,6 +11,38 @@ def evaluate(cube, dim=3):
         raise NotImplementedError(f'No eval function found for dim={dim}')
 
 
+def evaluate_correct(cube, n=None, dim=3):
+    _basic_checks(cube, dim=dim)
+    if n == None:
+        n = int(len(cube)**(1/dim))
+
+    # Check all non-diagonal vectors
+    for d in range(dim):
+        first = sum_vector(cube, n, dim, 0, d)
+        if any(sum_vector(cube, n, dim, x, d) != first for x in range(1, n)):
+            return False
+    # TODO: Check all diagonal vectors
+    return True
+
+
+def sum_vector(grid, n, dim, row_idx, dim_idx):
+    if dim_idx == 0: # dim_idx = 0 --> x-axis (rows). Rows are sequential numbers in the array, starting on any idx % n == 0.
+        return np.sum(grid[row_idx*n:row_idx*(n+1)])
+    if dim_idx == 1: # dim_idx = 1 --> y-axis (cols). Cols are numbers in the array with n-length jumps between them. 
+        return np.sum(grid[row_idx:row_idx+n**2::n])
+    return np.sum(grid[row_idx:row_idx+n**(dim_idx+1)::n**dim_idx])
+
+def sum_row(grid, n, dim, row_idx):
+    return sum_vector(grid, n, dim, row_idx, 0)
+
+def sum_col(grid, n, dim, col_idx):
+    return sum_vector(grid, n, dim, row_idx, 1)
+
+def sum_diagonal(grid, n, dim, col_idx):
+    pass
+
+
+
 def evaluate_square(square):
     '''Fitness function for a magic square: this code takes into account the diagonal sums on each square slice.
     Args:
@@ -56,15 +88,20 @@ Numbers that do not belong: {not_belong}
 Array: {representation}''')
 
 
-def _verify_square(square):
-    n = len(square) ** (1 / 2)
-    if np.round(n) ** 2 != len(square):
+def _basic_checks(cube, dim=3):
+    '''Function to perform basic sanity checks. Raises errors upon detecting faults.'''
+    n = len(cube) ** (1 / dim)
+    if np.round(n) ** dim != len(cube):
         raise ValueError('Invalid length! The solution length should be a square number')
     n = int(np.round(n))
 
-    required_numbers = set(range(1, n**2+1))
+    required_numbers = set(range(1, n**dim+1))
     if len(set(square) ^ required_numbers) != 0:
-        raise_representation_error(n**2, required_numbers, square)
+        raise_representation_error(n**dim, required_numbers, square)
+
+
+def _verify_square(square):
+    _basic_checks(square, dim=2)
 
     magic_constant = n * (n ** 2 + 1) / 2
     square = np.array(square).reshape((n, n))
@@ -72,14 +109,7 @@ def _verify_square(square):
 
 
 def _verify_cube(cube):
-    n = len(cube) ** (1 / 3)
-    if np.round(n) ** 3 != len(cube):
-        raise ValueError('Invalid length! The solution length should be a cubic number')
-    n = int(np.round(n))
-
-    required_numbers = set(range(1, n**3+1))
-    if len(set(cube) ^ required_numbers) != 0:
-        raise_representation_error(n**3, required_numbers, cube)
+    _basic_checks(square, dim=3)
 
     magic_constant = n * (n**3 + 1) / 2
     cube = np.array(cube).reshape((n, n, n))
