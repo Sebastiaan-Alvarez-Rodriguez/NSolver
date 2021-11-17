@@ -1,4 +1,4 @@
-from nsolver.solver import Solver, evaluate_correct
+from nsolver.solver import Solver, evaluate_correct, sum_row, sum_col, sum_diagonal, sum_vector, calc_magic_constant
 
 import configparser
 from copy import copy
@@ -13,7 +13,10 @@ def get_solver():
 class Backtrack(Solver):
     _version_ = 1.0
 
-    '''Backtracking algorithm to solve magic N-cubes.'''
+    '''Backtracking algorithm to solve magic N-cubes.
+    With backtracking, we walk across all possible states in a depth-first manner.
+    When we find a valid solution, we stop searching.
+    Many optimizations are possible with backtracking to reduce the search space.'''
     def _init_(self, T=250000, alpha=0.9, pm=2, iter_length=100):
         self.T = T                     # Annealing temperature
         self.alpha = alpha             # temperature decaying parameter
@@ -71,57 +74,47 @@ array([[[ 0.,  1.,  2.,  3.],
         [52., 53., 54., 55.],
         [56., 57., 58., 59.],
         [60., 61., 62., 63.]]])
-
         '''
 
-    def sum_vector(grid, n, dim, row_idx, dim_idx):
-        if dim_idx == 0: # dim_idx = 0 --> x-axis (rows). Rows are sequential numbers in the array, starting on any idx % n == 0.
-            return np.sum(grid[row_idx*n:row_idx*(n+1)])
-        if dim_idx == 1: # dim_idx = 1 --> y-axis (cols). Cols are numbers in the array with n-length jumps between them. 
-            return np.sum(grid[row_idx:row_idx+n**2::n])
-        return np.sum(grid[row_idx:row_idx+n**(dim_idx+1)::n**dim_idx])
-
-    def sum_row(grid, n, dim, row_idx):
-        return sum_vector(grid, n, dim, row_idx, 0)
-
-    def sum_col(grid, n, dim, col_idx):
-        return sum_vector(grid, n, dim, row_idx, 1)
-
-    def sum_diagonal(grid, n, dim, col_idx):
-        pass
-
     def execute(self, n, dim, evaluations, verbose):
-        '''Perform backtracking for the magic N-cube problem, using given args.
+        '''Execute this solver for the perfect cube problem, using given args.
         Args:
-            n (list(int)): List of numbers to form a magic cube. The first n entries form row 0, the next n entries row 1, etc.
+            n (int): Dimension size. e.g., for n=4 and dim=3, we expect a 4x4x4 cube.
             dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.
             evaluations (int): Maximum number of evaluations to perform.
-            verbose (bool): If set, print more output.
         Returns:
             list(int): found solution.'''
         grid = np.zeros(n**dim, dtype=int)
         available_nums = np.array([True for x in range(n**dim)])
-        self._exec(grid, available_nums, 0, n**dim, dim)
+        self._exec(grid, available_nums, 0, n, dim, n**dim, calc_magic_constant(n, dim))
         return grid
 
 
-    def _exec(self, grid, available_nums, idx, max_len, dim):
+    def _exec(self, grid, available_nums, idx, n, dim, max_len, magic_constant):
         '''Recursive function performing the actual backtracking.
         Args:
             grid (np.array(int)): Array representing the current solution state.
             available_nums (np.array(bool)): Array representing the available numbers to use.
             idx (int): Current index to evaluate. Recursive iterations will validate the next indices.
-            max_len (int): length of the grid.
             dim (int): Dimension of the problem.
+            max_len (int): length of the grid.
+            magic_constant (int): magic cubes must have rows, columns and diagonals with exactly this sum.
         Returns:
             bool: `True` if we found a solution. `False` otherwise.'''
         if idx == max_len: # If our grid is filled, we evaluate the correctness. If it is a correct answer, return it.
             return evaluate_correct(grid, dim=dim)
 
-        for num in _available_get_unused(available_nums):
+        if idx > 0 and idx % n == 0: # We completed a row. Validate whether the row contains generics.
+            if sum_row(grid, n, dim, idx//n) != magic_constant:
+                return False
+        # elif idx >= n*(n-1):
+        #     if sum_col(grid, n, dim, idx-n*(n-1)) != magic_constant:
+        #         return False
+
+        for num in list(_available_get_unused(available_nums)):
             grid[idx] = num
             _available_set_available(available_nums, num, False)
-            if self._exec(grid, available_nums, idx+1, max_len, dim):
+            if self._exec(grid, available_nums, idx+1, n, dim, max_len, magic_constant):
                 return True
             _available_set_available(available_nums, num) # TODO: What happens when updating array when iterating over it?
         return False
@@ -136,7 +129,7 @@ def _available_get_unused(available_nums):
         int: next unused number. 
     Raises:
         StopIteration: If all numbers are already used'''
-    return (idx+1 for x in enumerate(available_nums) if x)
+    return (idx+1 for idx, x in enumerate(available_nums) if x)
 
-def _available_set_available(self, available_nums, number, value=True):
+def _available_set_available(available_nums, number, value=True):
     available_nums[number-1] = value

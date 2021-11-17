@@ -44,9 +44,9 @@ class GeneticAlgorithm(Solver):
 
 
     def execute(self, n, dim, evaluations, verbose):
-        '''Execute this solver for the magic N-cube problem, using given args.
+        '''Execute this solver for the perfect cube problem, using given args.
         Args:
-            n (list(int)): List of numbers to form a magic cube. The first n entries form row 0, the next n entries row 1, etc.
+            n (int): Dimension size. e.g., for n=4 and dim=3, we expect a 4x4x4 cube.
             dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.
             evaluations (int): Maximum number of evaluations to perform.
         Returns:
@@ -78,7 +78,7 @@ class GeneticAlgorithm(Solver):
         # Initialize all members of population a random value [1, n^dim]) and evaluates
         for i in range(mu):
             pop_geno[i, :] = np.random.permutation(range(1, geno_len+1))
-            pop_fitness[i] = evaluate(pop_geno[i, :], dim=dim)
+            pop_fitness[i] = evaluate(pop_geno[i, :], n, dim=dim)
         index = np.argmin(pop_fitness)
 
         # Generate initial solution and evaluate
@@ -196,7 +196,7 @@ class GeneticAlgorithm(Solver):
 
 
             for i in range(mu):
-                pop_fitness[i] = evaluate(pop_geno[i, :], dim=dim)
+                pop_fitness[i] = evaluate(pop_geno[i, :], n, dim=dim)
 
             # optimal solution in each iteration
             index = np.argmin(pop_fitness)

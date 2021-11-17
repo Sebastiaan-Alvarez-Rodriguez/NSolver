@@ -2,11 +2,11 @@ import numpy as np
 
 
 
-def evaluate(cube, dim=3):
+def evaluate(cube, n, dim=3):
     if dim == 2:
-        return evaluate_square(cube)
+        return evaluate_square(cube, n)
     elif dim == 3:
-        return evaluate_cube(cube)
+        return evaluate_cube(cube, n)
     else:
         raise NotImplementedError(f'No eval function found for dim={dim}')
 
@@ -29,8 +29,8 @@ def sum_vector(grid, n, dim, row_idx, dim_idx):
     if dim_idx == 0: # dim_idx = 0 --> x-axis (rows). Rows are sequential numbers in the array, starting on any idx % n == 0.
         return np.sum(grid[row_idx*n:row_idx*(n+1)])
     if dim_idx == 1: # dim_idx = 1 --> y-axis (cols). Cols are numbers in the array with n-length jumps between them. 
-        return np.sum(grid[row_idx:row_idx+n**2::n])
-    return np.sum(grid[row_idx:row_idx+n**(dim_idx+1)::n**dim_idx])
+        return np.sum(grid[row_idx:(row_idx+n**2):n])
+    return np.sum(grid[row_idx:row_idx+n**(dim_idx+1):n**dim_idx])
 
 def sum_row(grid, n, dim, row_idx):
     return sum_vector(grid, n, dim, row_idx, 0)
@@ -39,43 +39,45 @@ def sum_col(grid, n, dim, col_idx):
     return sum_vector(grid, n, dim, row_idx, 1)
 
 def sum_diagonal(grid, n, dim, col_idx):
-    pass
+    pass #TODO: Compute diagonal sums
+
+def calc_magic_constant(n, dim):
+    return n*(n**dim+1) / 2
 
 
-
-def evaluate_square(square):
+def evaluate_square(square, n):
     '''Fitness function for a magic square: this code takes into account the diagonal sums on each square slice.
     Args:
-        square (list(int)): the solution vector that represents a magic cube.
+        square (list(int)): Solution vector that represents a magic cube.
+        n (int): dimension length. e.g., for n=2, we expect a 2x2 square.
     Returns:
         double: the error value of the input solution vector.
         The mean squared error (MSE) of all each row, column, diagonal and space diagonal sum to the magic constant is computed.
     Author: Koen van der Blom, Hao Wang, Sander van Rijn.'''
-
-    square, magic_constant = _verify_square(square)
+    square, magic_constant = _verify_square(square, n)
     errors = _calc_square_errors(square, magic_constant)
     mse = np.mean(errors)
     return mse
 
 
-def evaluate_cube(cube):
+def evaluate_cube(cube, n):
     '''Fitness function for a magic square: this code takes into account the diagonal sums on each square slice.
     Args:
         cube (list(int)): the solution vector that represents a magic cube.
+        n (int): dimension length. e.g., for n=2, we expect a 2x2 square.
     Returns:
         double: the error value of the input solution vector.
         The mean squared error (MSE) of all each row, column, diagonal and space diagonal sum to the magic constant is computed.
     Author: Koen van der Blom, Hao Wang, Sander van Rijn.'''
-
-    cube, magic_constant = _verify_cube(cube)
+    cube, magic_constant = _verify_cube(cube, n)
     errors = np.concatenate([_calc_cube_errors(cube, magic_constant, diag=True), _calc_space_square_diag_errors(cube, magic_constant)])
     mse = np.mean(errors)
     return mse
 
 
 
-def is_solution(cube, dim=3):
-    return evaluate(cube, dim=dim) == 0.0 
+def is_solution(cube, n, dim=3):
+    return evaluate(cube, n, dim=dim) == 0.0 
 
 
 def raise_representation_error(num_numbers, required_numbers, representation):
@@ -96,22 +98,22 @@ def _basic_checks(cube, dim=3):
     n = int(np.round(n))
 
     required_numbers = set(range(1, n**dim+1))
-    if len(set(square) ^ required_numbers) != 0:
-        raise_representation_error(n**dim, required_numbers, square)
+    if len(set(cube) ^ required_numbers) != 0:
+        raise_representation_error(n**dim, required_numbers, cube)
 
 
-def _verify_square(square):
+def _verify_square(square, n):
     _basic_checks(square, dim=2)
 
-    magic_constant = n * (n ** 2 + 1) / 2
+    magic_constant = calc_magic_constant(n, 2)
     square = np.array(square).reshape((n, n))
     return square, magic_constant
 
 
-def _verify_cube(cube):
+def _verify_cube(cube, n):
     _basic_checks(square, dim=3)
 
-    magic_constant = n * (n**3 + 1) / 2
+    magic_constant = calc_magic_constant(n, 3)
     cube = np.array(cube).reshape((n, n, n))
     return cube, magic_constant
 

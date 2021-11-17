@@ -39,7 +39,7 @@ def execute(instance, evaluations, size, dimension, verbose=False):
     solution = instance.execute(size, dimension, evaluations, verbose)
     t_delta = time.time() - t0
 
-    return solution, t_delta, evaluate(solution, dim=dimension)
+    return solution, t_delta, evaluate(solution, size, dim=dimension)
 
 
 def run(parser, args):
@@ -57,7 +57,7 @@ def run(parser, args):
 
     printc('fitness = ', Color.CAN, f'{fitness:.03f}', Color.CLR, '. time = ', Color.PRP, f'{t_delta:03f}s', Color.CLR, '. Found solution = ', *((Color.GRN, 'yes') if fitness==0.0 else (Color.RED, 'no')))        
     print_solution(solution, args.size, args.dimension)
-    if is_solution(solution, dim=args.dimension):
+    if is_solution(solution, args.size, dim=args.dimension):
         prints(f'({t_delta:03f}s) Obtained value is a magic cube.')
     else:
         printw(f'({t_delta:03f}s) Obtained value is not a magic cube.')

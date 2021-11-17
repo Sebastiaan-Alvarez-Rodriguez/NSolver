@@ -81,12 +81,11 @@ class SimulatedAnnealing(Solver):
 
 
     def execute(self, n, dim, evaluations, verbose):
-        '''Perform simulated annealing for the magic N-cube problem, using given args.
+        '''Execute this solver for the perfect cube problem, using given args.
         Args:
-            n (list(int)): List of numbers to form a magic cube. The first n entries form row 0, the next n entries row 1, etc.
+            n (int): Dimension size. e.g., for n=4 and dim=3, we expect a 4x4x4 cube.
             dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.
             evaluations (int): Maximum number of evaluations to perform.
-            verbose (bool): If set, print more output.
         Returns:
             list(int): found solution.'''
         # if do_plot:
@@ -127,7 +126,7 @@ class SimulatedAnnealing(Solver):
 
         # Generate initial solution and evaluate
         solution_optimal = self.generate_random_answer(n, dim)
-        fitness_optimal = evaluate(solution_optimal, dim=dim)  # evaluate the solution
+        fitness_optimal = evaluate(solution_optimal, n, dim=dim)  # evaluate the solution
         solution = copy(solution_optimal)
         fitness = fitness_optimal
 
@@ -139,7 +138,7 @@ class SimulatedAnnealing(Solver):
             for _ in range(self.iter_length):
 
                 solution_new = self.mutate_answer(solution, n, dim, self.pm, fitness, fitness_optimal)   # Generate a new solution by permutating the current solution
-                fitness_new = evaluate(solution_new, dim=dim)   # evaluate the new solution
+                fitness_new = evaluate(solution_new, n, dim=dim)   # evaluate the new solution
 
                 if fitness_new < fitness or np.random.randn() < np.exp(-(fitness_new - fitness) / self.T):
                     # Our found mutation is closer to a solution than the current answer, or
