@@ -86,8 +86,13 @@ array([[[ 0.,  1.,  2.,  3.],
             list(int): found solution.'''
         grid = np.zeros(n**dim, dtype=int)
         available_nums = np.array([True for x in range(n**dim)])
-        self._exec(grid, available_nums, 0, n, dim, n**dim, calc_magic_constant(n, dim))
-        return grid
+        if self._exec(grid, available_nums, 0, n, dim, n**dim, calc_magic_constant(n, dim)):
+            return grid
+        else:
+            if verbose:
+                print('Could not find a valid solution.')
+            # return list(range(1, n**dim +1))
+            return grid
 
 
     def _exec(self, grid, available_nums, idx, n, dim, max_len, magic_constant):
@@ -98,19 +103,25 @@ array([[[ 0.,  1.,  2.,  3.],
             idx (int): Current index to evaluate. Recursive iterations will validate the next indices.
             dim (int): Dimension of the problem.
             max_len (int): length of the grid.
-            magic_constant (int): magic cubes must have rows, columns and diagonals with exactly this sum.
+            magic_constant (int): magic cubes must have rows, columns and diagonals with a sum equal to this value.
         Returns:
             bool: `True` if we found a solution. `False` otherwise.'''
-        if idx == max_len: # If our grid is filled, we evaluate the correctness. If it is a correct answer, return it.
+        if idx == max_len: # When our grid is filled, we evaluate the solution. Return whether it is correct.
             return evaluate_correct(grid, dim=dim)
 
-        if idx > 0 and idx % n == 0: # We completed a row. Validate whether the row contains generics.
-            if sum_row(grid, n, dim, idx//n) != magic_constant:
+        if idx % n == 0 and idx > 0: # We completed a row. Validate whether the row contains generics.
+            if sum_row(grid, n, dim, idx//n-1) != magic_constant:
                 return False
-        # elif idx >= n*(n-1):
-        #     if sum_col(grid, n, dim, idx-n*(n-1)) != magic_constant:
-        #         return False
+        if idx > n*(n-1):
+            if sum_col(grid, n, dim, idx-n*(n-1)-1) != magic_constant:
+                return False
+            # print(f'({idx}) Col idx={idx-n*(n-1)-1}, {grid} ---> ({sum_col(grid, n, dim, idx-n*(n-1)-1)})')
 
+        # Sanity check: Verifies whether all available items are actually available.
+        # for i, x in enumerate(list(available_nums)):
+        #     num_ = i+1
+        #     if x and num_ in grid:
+        #         raise ValueError(f'(idx={idx}, num there={grid[idx]}) Found number={num_} in grid ({grid}) while labeled "available" in state array: {available_nums}')
         for num in list(_available_get_unused(available_nums)):
             grid[idx] = num
             _available_set_available(available_nums, num, False)
@@ -118,6 +129,12 @@ array([[[ 0.,  1.,  2.,  3.],
                 return True
             _available_set_available(available_nums, num) # TODO: What happens when updating array when iterating over it?
         return False
+
+# A valid solution:
+#
+# 08 03 04
+# 01 05 09
+# 06 07 02
 
 
 def _available_get_unused_next(available_nums):

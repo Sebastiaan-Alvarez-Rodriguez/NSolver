@@ -27,7 +27,7 @@ def evaluate_correct(cube, n=None, dim=3):
 
 def sum_vector(grid, n, dim, row_idx, dim_idx):
     if dim_idx == 0: # dim_idx = 0 --> x-axis (rows). Rows are sequential numbers in the array, starting on any idx % n == 0.
-        return np.sum(grid[row_idx*n:row_idx*(n+1)])
+        return np.sum(grid[row_idx*n:row_idx*n+n])
     if dim_idx == 1: # dim_idx = 1 --> y-axis (cols). Cols are numbers in the array with n-length jumps between them. 
         return np.sum(grid[row_idx:(row_idx+n**2):n])
     return np.sum(grid[row_idx:row_idx+n**(dim_idx+1):n**dim_idx])
@@ -36,7 +36,7 @@ def sum_row(grid, n, dim, row_idx):
     return sum_vector(grid, n, dim, row_idx, 0)
 
 def sum_col(grid, n, dim, col_idx):
-    return sum_vector(grid, n, dim, row_idx, 1)
+    return sum_vector(grid, n, dim, col_idx, 1)
 
 def sum_diagonal(grid, n, dim, col_idx):
     pass #TODO: Compute diagonal sums
