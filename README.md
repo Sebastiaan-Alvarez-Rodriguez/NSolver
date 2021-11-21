@@ -12,11 +12,15 @@ Note that for diagonals, we only review diagonal vectors of size `3`.
 
 
 The goal of this project is to compare algorithms to generate a perfect magic N-dimensional cube.
-Besides that, users can also run their own genetic algorithms.
-The following example implementations exist:
- 1. Simulated Annealing ([learn more](https://en.wikipedia.org/wiki/Simulated_annealing)) 
- 2. Genetic Algorithm ([learn more](https://en.wikipedia.org/wiki/Genetic_algorithm))
+Users can run and compare their own algorithms.
 
+The following example implementations exist:
+ + Informed algorithms
+    1. Backtracking ([learn more](https://en.wikipedia.org/wiki/Backtracking))
+ + Uninformed algorithms
+     1. Simulated annealing ([learn more](https://en.wikipedia.org/wiki/Simulated_annealing)) 
+     2. Genetic algorithm ([learn more](https://en.wikipedia.org/wiki/Genetic_algorithm))
+     3. A random solver
 
 ## Parameter Search
 Solvers can have `int` parameters and `float` parameters.
