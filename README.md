@@ -16,7 +16,7 @@ Users can run and compare their own algorithms.
 
 The following example implementations exist:
  + Informed algorithms
-    1. Backtracking ([learn more](https://en.wikipedia.org/wiki/Backtracking))
+     1. Backtracking ([learn more](https://en.wikipedia.org/wiki/Backtracking))
  + Uninformed algorithms
      1. Simulated annealing ([learn more](https://en.wikipedia.org/wiki/Simulated_annealing)) 
      2. Genetic algorithm ([learn more](https://en.wikipedia.org/wiki/Genetic_algorithm))
