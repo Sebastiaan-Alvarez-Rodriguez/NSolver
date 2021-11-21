@@ -24,26 +24,69 @@ The following example implementations exist:
      2. Genetic algorithm ([learn more](https://en.wikipedia.org/wiki/Genetic_algorithm))
      3. A random solver
 
-## Parameter Search
-Solvers can have `int` parameters and `float` parameters.
-Regular optimization functions like `scipy.minimize` are not going to cut it, because they only work for `float` parameters.
-
-[Integer Programming (IP)](https://en.wikipedia.org/wiki/Integer_programming) requires all variables to be `int`.  
-Mixed-Integer Programming (MIP) allows variables to be either `int` or `float`.
-There are `2` interesting forms of MIP:
- 1. Mixed-Integer **Linear** Programming (MILP)
- 2. Mixed-Integer **Non-Linear** Programming (MINLP)
-
-### Mixed-Integer Linear Programming (MILP)
-The following MILP modules are available in Python:
- 1. [python-mip](https://python-mip.readthedocs.io/en/latest/intro.html)
- 2. python-pulp
 
 
-### Mixed-Integer **Non-Linear** Programming (MINLP)
-Information: https://scicomp.stackexchange.com/questions/19870/python-solvers-for-mixed-integer-nonlinear-constrained-optimization
+## Requirements
+The following dependencies are required for Nsolver:
+ 1. python>=3.7
+ 2. numpy>=1.21.3
 
-Probably need [Mixed-integer linear fractional programming (MILFP)](https://optimization.mccormick.northwestern.edu/index.php/Mixed-integer_linear_fractional_programming_(MILFP))
-WIP:
- 1. [emcee](https://emcee.readthedocs.io/en/stable/tutorials/quickstart/#quickstart)
- 2. [sklearn ML](https://machinelearningmastery.com/hyperparameter-optimization-with-random-search-and-grid-search/)
+
+
+## Usage
+There are 3 primary functions in this framework:
+ 1. `run` a single solver.
+ 2. `compare` multiple solvers.
+ 3. `search` for optimal solver parameters (WIP).
+
+For more information about the options, use:
+```bash
+python3 nsolver/cli/entrypoint.py -h          # common args
+python3 nsolver/cli/entrypoint.py run -h      # run-specific args
+python3 nsolver/cli/entrypoint.py compare -h  # compare-specific args
+python3 nsolver/cli/entrypoint.py search -h   # search-specific args
+```
+
+
+
+## Creating your own solver
+Custom solvers implement the interface given in [/nsolver/solver/solver.py](/nsolver/solver/solver.py):
+```python
+def get_solver():
+    '''Returns the implemented solver class.'''
+    return solver
+
+class Solver(object):
+    def __init__(self):
+        pass
+
+
+    @staticmethod
+    def from_config(path):
+        '''Builds this Solver using given configuration file.
+        Args:
+            path (str or Path): path to configuration file.
+        Returns:
+            Solver: Solver implementation created from the configuration file.'''
+        raise NotImplementedError('This solver does not support loading from a configuration file.')
+
+
+    def execute(self, n, dim, evaluations):
+        '''Execute this solver for the perfect cube problem, using given args.
+        Args:
+            n (int): Dimension size. e.g., for n=4 and dim=3, we expect a 4x4x4 cube.
+            dim (int): Dimension of magic cube. E.g. for dim=2, must produce a magic square.
+            evaluations (int): Maximum number of evaluations to perform.
+        Returns:
+            list(int): found solution.'''
+        raise NotImplementedError
+```
+When all functions are implemented, the implementation can be debugged using:
+```bash
+python3 nsolver/cli/entrypoint.py --size 3 --dimension 2 --verbose run <path/to/new/implementation.py>
+```
+
+Regular execution can be performed using:
+```bash
+python3 nsolver/cli/entrypoint.py --size 3 --dimension 2 run <path/to/new/implementation.py> 
+```
