@@ -17,12 +17,8 @@ class Backtrack(Solver):
     With backtracking, we walk across all possible states in a depth-first manner.
     When we find a valid solution, we stop searching.
     Many optimizations are possible with backtracking to reduce the search space.'''
-    def _init_(self, T=250000, alpha=0.9, pm=2, iter_length=100):
-        self.T = T                     # Annealing temperature
-        self.alpha = alpha             # temperature decaying parameter
-        self.pm = pm                   # mutation rate
-        self.iter_length = iter_length # number of evaluations per iteration
-
+    def _init_(self):
+        pass
 
     @staticmethod
     def from_config(path):
@@ -40,8 +36,7 @@ class Backtrack(Solver):
         if float(parser['NSolver']['version']) != Backtracking._version_:
             raise ValueError(f'Expected to find version "{Backtracking._version_}", but found version "{parser["NSolver"]["version"]}"')
         default = parser['DEFAULT']
-        return Backtracking(T=int(default['T']), alpha=float(default['alpha']), pm=int(default['pm']), iter_length=int(default['iter_length']))
-
+        return Backtracking()
 
     def execute(self, n, dim, evaluations, verbose):
         '''Execute this solver for the perfect cube problem, using given args.
@@ -73,7 +68,6 @@ class Backtrack(Solver):
             magic_constant (int): magic cubes must have rows, columns and diagonals with a sum equal to this value.
         Returns:
             bool: `True` if we found a solution. `False` otherwise.'''
-
         for d in range(dim):
             closest_row_idx, available = sum_closest_available(grid, n, dim, d, idx)
             if available:
@@ -83,13 +77,6 @@ class Backtrack(Solver):
         if idx == max_len: # When our grid is filled, we evaluate the solution. Return whether it is correct.
             return evaluate_correct(grid, dim=dim)
 
-        # print(f'({idx}) Col idx={idx-n*(n-1)-1}, {grid} ---> ({sum_col(grid, n, dim, idx-n*(n-1)-1)})')
-
-        # Sanity check: Verifies whether all available items are actually available.
-        # for i, x in enumerate(list(available_nums)):
-        #     num_ = i+1
-        #     if x and num_ in grid:
-        #         raise ValueError(f'(idx={idx}, num there={grid[idx]}) Found number={num_} in grid ({grid}) while labeled "available" in state array: {available_nums}')
         for num in list(_available_get_unused(available_nums)):
             grid[idx] = num
             _available_set_available(available_nums, num, False)

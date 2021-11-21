@@ -66,16 +66,16 @@ def sum_available(grid, n, dim, row_idx, axis, cur_idx):
     if cur_idx == 0:
         return False
     if axis == 0:
-        return cur_idx >= row_idx*n+n
+        return cur_idx > row_idx*n+n-1
     if axis == 1:
         offset = (row_idx // n) * n**2 + row_idx % n
-        return cur_idx >= offset+n**2
+        return cur_idx > offset+n*(n-1)
     if axis == 2:
         offset = (row_idx // n**2) * n**3 + row_idx % n**2
-        return cur_idx >= offset+n**3
+        return cur_idx > offset+(n**2)*(n-1)
     else:
         offset = (row_idx // n**axis) * n**(axis+1) + row_idx % n**axis
-        return cur_idx >= offset+n**(axis+1)
+        return cur_idx > offset+n**(axis+1)
 
 
 def sum_closest_available(grid, n, dim, axis, cur_idx):
@@ -227,7 +227,7 @@ def _verify_square(square, n):
 
 
 def _verify_cube(cube, n):
-    _basic_checks(square, dim=3)
+    _basic_checks(cube, dim=3)
 
     magic_constant = calc_magic_constant(n, 3)
     cube = np.array(cube).reshape((n, n, n))
