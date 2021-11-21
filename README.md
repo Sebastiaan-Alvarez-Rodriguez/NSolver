@@ -81,8 +81,8 @@ class Solver(object):
             list(int): found solution.'''
         raise NotImplementedError
 ```
-For a simple example, see [examples/uninformed/random/random.py](examples/uninformed/random/random.py).
-For an example with optimizable parameters, see [examples/uninformed/simulated_annealing/simulated_annealing.py](examples/uninformed/simulated_annealing/simulated_annealing.py).
+For a simple example, see the [random solver](examples/uninformed/random/random.py).
+For an example with optimizable parameters, see [simulated annealing solver](examples/uninformed/simulated_annealing/simulated_annealing.py).
 
 When all functions are implemented, the implementation can be debugged using:
 ```bash
