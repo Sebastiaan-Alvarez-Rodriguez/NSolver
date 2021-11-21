@@ -1,4 +1,4 @@
-from nsolver.solver import Solver, evaluate_correct, sum_row, sum_col, sum_diagonal, sum_vector, calc_magic_constant
+from nsolver.solver import Solver, evaluate_correct, sum_available, sum_closest_available, sum_vector, calc_magic_constant
 
 import configparser
 from copy import copy
@@ -43,39 +43,6 @@ class Backtrack(Solver):
         return Backtracking(T=int(default['T']), alpha=float(default['alpha']), pm=int(default['pm']), iter_length=int(default['iter_length']))
 
 
-    @staticmethod
-    def generate_random_answer(n, dim):
-        '''Produces a valid, completely random answer.
-        Note: An answer to the problem is not necessarily a solution to the problem.
-              In fact, a random answer is unlikely to be a solution for the N-cube problem.
-        Args:
-            n (int): Axiomial dimension vector length (e.g., for a magic square of 3x3 fields (a 3-2D cube), n=3 and dim=2.
-            dim (int): The amount of correlated dimensions (e.g., for a magic cube of x*x*x*x fields (a x-4D cube, n=x and dim=4.'''
-        return np.random.permutation(np.arange(1, (n ** dim)+1))
-
-        '''
-np.array(a).reshape(4, 4, 4)
-array([[[ 0.,  1.,  2.,  3.],
-        [ 4.,  5.,  6.,  7.],
-        [ 8.,  9., 10., 11.],
-        [12., 13., 14., 15.]],
-
-       [[16., 17., 18., 19.],
-        [20., 21., 22., 23.],
-        [24., 25., 26., 27.],
-        [28., 29., 30., 31.]],
-
-       [[32., 33., 34., 35.],
-        [36., 37., 38., 39.],
-        [40., 41., 42., 43.],
-        [44., 45., 46., 47.]],
-
-       [[48., 49., 50., 51.],
-        [52., 53., 54., 55.],
-        [56., 57., 58., 59.],
-        [60., 61., 62., 63.]]])
-        '''
-
     def execute(self, n, dim, evaluations, verbose):
         '''Execute this solver for the perfect cube problem, using given args.
         Args:
@@ -106,16 +73,17 @@ array([[[ 0.,  1.,  2.,  3.],
             magic_constant (int): magic cubes must have rows, columns and diagonals with a sum equal to this value.
         Returns:
             bool: `True` if we found a solution. `False` otherwise.'''
+
+        for d in range(dim):
+            closest_row_idx, available = sum_closest_available(grid, n, dim, d, idx)
+            if available:
+                if sum_vector(grid, n, dim, closest_row_idx, d) != magic_constant:
+                    return False
+
         if idx == max_len: # When our grid is filled, we evaluate the solution. Return whether it is correct.
             return evaluate_correct(grid, dim=dim)
 
-        if idx % n == 0 and idx > 0: # We completed a row. Validate whether the row contains generics.
-            if sum_row(grid, n, dim, idx//n-1) != magic_constant:
-                return False
-        if idx > n*(n-1):
-            if sum_col(grid, n, dim, idx-n*(n-1)-1) != magic_constant:
-                return False
-            # print(f'({idx}) Col idx={idx-n*(n-1)-1}, {grid} ---> ({sum_col(grid, n, dim, idx-n*(n-1)-1)})')
+        # print(f'({idx}) Col idx={idx-n*(n-1)-1}, {grid} ---> ({sum_col(grid, n, dim, idx-n*(n-1)-1)})')
 
         # Sanity check: Verifies whether all available items are actually available.
         # for i, x in enumerate(list(available_nums)):

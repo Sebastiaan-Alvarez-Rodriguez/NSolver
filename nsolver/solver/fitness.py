@@ -16,33 +16,149 @@ def evaluate_correct(cube, n=None, dim=3):
     if n == None:
         n = int(len(cube)**(1/dim))
 
+    magic_constant = calc_magic_constant(n, dim)
     # Check all non-diagonal vectors
     for d in range(dim):
-        first = sum_vector(cube, n, dim, 0, d)
-        if any(sum_vector(cube, n, dim, x, d) != first for x in range(1, n)):
+        if any(sum_vector(cube, n, dim, x, d) != magic_constant for x in range(1, n)):
             return False
+
     # TODO: Check all diagonal vectors
+    if evaluate(cube, n, dim=dim) != 0.0:
+        return False
     return True
 
+def sum_vector(grid, n, dim, row_idx, axis):
+    '''Given a flat array representing a n^dim cube, returns the sum of a vector of the cube for given row and dimension.
+    Args:
+        grid (list(int) or np.array): A single list representing a `dim`-dimensional grid. Every `n` items form a row.
+        n (int): Length of each vertex in the cube.
+        dim (int): Amount of dimensions for our grid. E.g. for `dim=2`, grid is a 2D-square.
+        row_idx (int): The row-number to sum.
+        axis (int): Provides the dimension on which we sum a row. 
+    Returns: sum of requested row.'''
+    if axis == 0: 
+        # axis = 0 --> x-axis (rows). Rows are sequential numbers in the array, starting on any idx % n == 0.
+        return np.sum(grid[row_idx*n:row_idx*n+n:1])
+    if axis == 1:
+        # axis = 1 --> y-axis (cols). Cols are numbers in the array with n-length jumps between them. 
+        offset = (row_idx // n) * n**2 + row_idx % n
+        return np.sum(grid[offset:(offset+n**2):n])
+    if axis == 2: 
+        # axis = 2 --> z-axis. Z-Rows are numbers in the array with n**2-length jumps between them. 
+        offset = (row_idx // n**2) * n**3 + row_idx % n**2
+        return np.sum(grid[offset:offset+n**3:n**2])
 
-def sum_vector(grid, n, dim, row_idx, dim_idx):
-    if dim_idx == 0: # dim_idx = 0 --> x-axis (rows). Rows are sequential numbers in the array, starting on any idx % n == 0.
-        return np.sum(grid[row_idx*n:row_idx*n+n])
-    if dim_idx == 1: # dim_idx = 1 --> y-axis (cols). Cols are numbers in the array with n-length jumps between them. 
-        return np.sum(grid[row_idx:(row_idx+n**2):n])
-    return np.sum(grid[row_idx:row_idx+n**(dim_idx+1):n**dim_idx])
+    offset = (row_idx // n**axis) * n**(axis+1) + row_idx % n**axis
+    return np.sum(grid[offset:offset+n**(axis+1):n**axis])
+
+
+def sum_available(grid, n, dim, row_idx, axis, cur_idx):
+    '''Determines whether it is possible to compute the row_idx'th vector sum in a partially constructed array.
+    Args:
+        grid (list(int) or np.array): A single list representing a `dim`-dimensional grid.
+        n (int): Length of each vertex in the cube.
+        dim (int): Amount of dimensions for our grid. E.g. for `dim=2`, grid is a 2D-square.
+        row_idx (int): The row-number to check for availability.
+        axis (int): Provides the dimension on which we sum a row.
+        cur_idx (int): Current index in the grid (assumed not filled yet).
+    Returns: 
+        bool: `True` if we can apply this sum on the current grid, `False` otherwise.'''
+    if cur_idx == 0:
+        return False
+    if axis == 0:
+        return cur_idx >= row_idx*n+n
+    if axis == 1:
+        offset = (row_idx // n) * n**2 + row_idx % n
+        return cur_idx >= offset+n**2
+    if axis == 2:
+        offset = (row_idx // n**2) * n**3 + row_idx % n**2
+        return cur_idx >= offset+n**3
+    else:
+        offset = (row_idx // n**axis) * n**(axis+1) + row_idx % n**axis
+        return cur_idx >= offset+n**(axis+1)
+
+
+def sum_closest_available(grid, n, dim, axis, cur_idx):
+    '''See sum_available(grid, n, dim, row_idx, axis, cur_idx).
+    Automatically fills in the closest row_idx for partially constructed grid.
+    Returns:
+        int, bool: The closest row index; whether the sum is available in given partially constructed cube.'''
+    closest_row_idx = sum_closest(grid, n, dim, axis, cur_idx)
+    return closest_row_idx, sum_available(grid, n, dim, closest_row_idx, axis, cur_idx)
+
+
+def sum_closest(grid, n, dim, axis, cur_idx):
+    '''Given a flat array representing a n^dim cube and an index, computes the closest row index.
+    Args:
+        grid (list(int) or np.array): A single list representing a `dim`-dimensional grid.
+        n (int): Length of each vertex in the cube.
+        dim (int): Amount of dimensions for our grid. E.g. for `dim=2`, grid is a 2D-square.
+        axis (int): The dimension to find the closest row index for.
+        cur_idx (int): Current index in the grid (assumed not filled yet).
+    Returns:
+        int: The closest row index for given axis. This row index may or may not be available yet,
+             depending on whether the pointed row is completely filled or not (check with sum_available()).'''
+    ans = _sum_closest(grid, n, dim, axis, cur_idx)
+    return ans if ans >= 0 else 0
+
+def _sum_closest(grid, n, dim, axis, cur_idx):
+    last_filled_idx = cur_idx-1
+    if axis == 0:
+        return last_filled_idx // n
+    if axis == 1:
+        offset = (last_filled_idx // n**2) * n
+        local_square_idx = last_filled_idx % n**2
+        return offset + (0 if local_square_idx <= n*(n-1) else local_square_idx - n*(n-1))
+    if axis == 2:
+        offset = (last_filled_idx // n**3) * n**2
+        local_square_idx = last_filled_idx % n**3
+        return offset + (0 if local_square_idx <= (n**2)*(n-1) else local_square_idx - (n**2)*(n-1))
+    else:
+        offset = (last_filled_idx // n**(axis+1)) * n**axis
+        local_square_idx = last_filled_idx % n**(axis+1)
+        return offset + (0 if local_square_idx <= (n**(axis-1))*(n-1) else local_square_idx - (n**(axis-1))*(n-1))
+ 
 
 def sum_row(grid, n, dim, row_idx):
+    '''Computes the sum of a single row.
+    Args:
+        grid (list(int) or np.array): A single list representing a `dim`-dimensional grid.
+        n (int): Length of each vertex in the cube.
+        dim (int): Amount of dimensions for our grid. E.g. for `dim=2`, grid is a 2D-square.
+        row_idx (int): The row-number to sum.
+    Returns: sum of requested row.'''
     return sum_vector(grid, n, dim, row_idx, 0)
 
+
 def sum_col(grid, n, dim, col_idx):
+    '''Computes the sum of a single column.
+    Args:
+        grid (list(int) or np.array): A single list representing a `dim`-dimensional grid.
+        n (int): Length of each vertex in the cube.
+        dim (int): Amount of dimensions for our grid. E.g. for `dim=2`, grid is a 2D-square.
+        col_idx (int): The col-number to sum.
+    Returns: sum of requested col.'''
     return sum_vector(grid, n, dim, col_idx, 1)
 
-def sum_diagonal(grid, n, dim, col_idx):
-    pass #TODO: Compute diagonal sums
+
+def sum_diagonal(grid, n, dim, diagonal_idx, upper=True):
+    # TODO: Add inner diagonals for >2 dimensional cubes.
+    raise NotImplementedError(f'Did not implement diagonal walks yet')
+    offset = diagonal_idx * n**dim
+    if upper:
+        return np.sum(grid[offset:offset+n**2:n+1])
+    return np.sum(grid[offset+n-1:offset+n**2:n-1])
+
 
 def calc_magic_constant(n, dim):
     return n*(n**dim+1) / 2
+
+
+def calc_num_k_cubes(k, n):
+    '''Returns the number of k-cubes inside an n-cube.
+    E.g., for k=2 and n=3, returns 6. There are 6 squares in a cube.
+    From: https://www.math.brown.edu/tbanchof/Beyond3d/chapter4/section07.html''' 
+    pass
 
 
 def evaluate_square(square, n):
