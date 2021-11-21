@@ -98,12 +98,6 @@ class Backtrack(Solver):
             _available_set_available(available_nums, num) # TODO: What happens when updating array when iterating over it?
         return False
 
-# A valid solution:
-#
-# 08 03 04
-# 01 05 09
-# 06 07 02
-
 
 def _available_get_unused_next(available_nums):
     return next(_available_get_unused(available_nums))
