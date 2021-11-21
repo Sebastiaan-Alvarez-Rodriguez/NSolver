@@ -51,7 +51,7 @@ class Random(Solver):
         fitness_optimal = np.inf
         for evalcount, x in enumerate(range(evaluations)):
             cur_answer = Random.generate_random_answer(n, dim)
-            cur_fitness = evaluate(cur_answer, dim=dim)
+            cur_fitness = evaluate(cur_answer, n, dim=dim)
             if cur_fitness < fitness_optimal:
                 solution_optimal = cur_answer
                 fitness_optimal = cur_fitness
