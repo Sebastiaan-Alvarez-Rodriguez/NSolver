@@ -1,4 +1,6 @@
 # NSolver
+Magic N-cube solver framework, focussing on genetic algorithms to solve the magic N-cube problem.
+
 A magic N-cube is a N-dimensional object with axiomial vectors of a constant size X in all dimensions,
 where the sum of all X-sized vectors is equal.
 E.g. an instance of a magic 3x3 2D cube (a square) would be:
